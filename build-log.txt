@@ -26,3 +26,16 @@
 
 [0;31m  [03:03:27] ✗ database FAILED (exit 1, 0m 1s)[0m
 [0;31m  [03:03:27] ✗ Check log: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/01_database.txt[0m
+./build-overnight.sh: line 124: PHASE_RESULTS: bad array subscript
+[0;36m  [03:03:27] Git committed: phase 01[0m
+
+
+[0;34m============================================================[0m
+[0;34m  [03:03:27] PHASE 2/7: FastAPI backend + REST endpoints[0m
+[0;34m============================================================[0m
+
+[1;33m  [03:03:27] Prompt length: 3252 chars | Max turns: 80[0m
+[1;33m  [03:03:27] Log file: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/02_backend_api.txt[0m
+
+[0;31m  [03:03:28] ✗ backend_api FAILED (exit 1, 0m 1s)[0m
+[0;31m  [03:03:28] ✗ Check log: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/02_backend_api.txt[0m

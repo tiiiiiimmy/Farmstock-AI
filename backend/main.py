@@ -11,7 +11,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional local dev dependency
 
 load_dotenv()
 
-from .database import init_db, seed_db
+from .database import ensure_db_ready
 from .routers import farms, orders, products, predictions, recommendations, alerts, place_order, spending, chat
 from .whatsapp import webhook
 
@@ -28,8 +28,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup():
-    init_db()
-    seed_db()
+    ensure_db_ready()
 
 
 app.include_router(farms.router, prefix="/api")

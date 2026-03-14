@@ -39,3 +39,16 @@
 
 [0;31m  [03:03:28] ✗ backend_api FAILED (exit 1, 0m 1s)[0m
 [0;31m  [03:03:28] ✗ Check log: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/02_backend_api.txt[0m
+./build-overnight.sh: line 124: PHASE_RESULTS: bad array subscript
+[0;36m  [03:03:28] Git committed: phase 02[0m
+
+
+[0;34m============================================================[0m
+[0;34m  [03:03:28] PHASE 3/7: AI engine + Claude API[0m
+[0;34m============================================================[0m
+
+[1;33m  [03:03:28] Prompt length: 1324 chars | Max turns: 60[0m
+[1;33m  [03:03:28] Log file: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/03_ai_engine.txt[0m
+
+[0;31m  [03:03:29] ✗ ai_engine FAILED (exit 1, 0m 1s)[0m
+[0;31m  [03:03:29] ✗ Check log: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/03_ai_engine.txt[0m

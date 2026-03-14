@@ -104,3 +104,33 @@
 
 [0;31m  [03:03:34] ✗ integration FAILED (exit 1, 0m 2s)[0m
 [0;31m  [03:03:34] ✗ Check log: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/07_integration.txt[0m
+./build-overnight.sh: line 124: PHASE_RESULTS: bad array subscript
+[0;36m  [03:03:34] Git committed: phase 07[0m
+
+
+[0;34m============================================================[0m
+[1;33m  BUILD COMPLETE — 0/7 phases passed[0m
+[0;34m  Duration: 0h 0m[0m
+[0;34m  Finished: Sun Mar 15 03:03:34 NZDT 2026[0m
+[0;34m============================================================[0m
+
+  Phase Results:
+    [0;31m✗ 01: database[0m
+    [0;31m✗ 02: backend_api[0m
+    [0;31m✗ 03: ai_engine[0m
+    [0;31m✗ 04: frontend_core[0m
+    [0;31m✗ 05: frontend_pages[0m
+    [0;31m✗ 06: whatsapp[0m
+    [0;31m✗ 07: integration[0m
+
+  Logs:     /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/
+  Results:  build-results.md
+  Git log:  git log --oneline
+
+  Quick start:
+    cd /Users/ss/Desktop/farmstockai/Farmstock-AI
+    echo 'ANTHROPIC_API_KEY=your_key' > .env
+    cd backend && python3 -m uvicorn main:app --reload --port 8000
+    cd ../frontend && npm install && npm run dev
+    open http://localhost:5173
+

@@ -1,0 +1,27 @@
+# FarmStock AI — Build Summary
+Generated: Sun Mar 15 03:03:34 NZDT 2026
+Duration: 0h 0m
+Phases: 0 passed / 7 failed / 7 total
+
+## Phase Results
+- [FAIL] 01: database
+- [FAIL] 02: backend_api
+- [FAIL] 03: ai_engine
+- [FAIL] 04: frontend_core
+- [FAIL] 05: frontend_pages
+- [FAIL] 06: whatsapp
+- [FAIL] 07: integration
+
+## Next Steps
+1. Create .env with ANTHROPIC_API_KEY
+2. cd backend && python3 -m uvicorn main:app --reload --port 8000
+3. cd frontend && npm install && npm run dev
+4. Open http://localhost:5173
+5. Test key flows, fix any issues
+6. Configure WhatsApp connection manually
+
+## Recovery Commands
+- View phase logs: cat build-logs/01_database.txt
+- Git history: git log --oneline
+- Revert broken phase: git revert HEAD
+- Re-run single phase: copy the prompt from this script and run claude -p "..." --allowedTools "Read" "Write" "Edit" "Bash"

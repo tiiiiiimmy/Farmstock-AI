@@ -74,3 +74,6 @@
 - Include complete request/response examples and error handling
 
 ```
+
+**Commit scope rules:** 
+Files must be committed one at a time. If a folder contains more than two files, the entire folder cannot be committed in a single commit.

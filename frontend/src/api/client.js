@@ -1,4 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (typeof window !== "undefined" && window.location.port === "5173"
+    ? ""
+    : "http://127.0.0.1:8000");
 export const DEFAULT_FARM_ID = "farm-001";
 
 async function request(path, options = {}) {

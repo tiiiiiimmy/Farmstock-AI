@@ -6,6 +6,7 @@ import os
 import uuid
 import json
 from datetime import datetime, timedelta
+
 try:
     from dotenv import load_dotenv
 except ModuleNotFoundError:  # pragma: no cover - optional local dev dependency
@@ -14,13 +15,19 @@ except ModuleNotFoundError:  # pragma: no cover - optional local dev dependency
 
 load_dotenv()
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_DB_PATH = os.path.join(BASE_DIR, "farmstock.db")
+_DB_READY = False
+
 
 def get_db_path() -> str:
-    return os.environ.get("DATABASE_PATH", "backend/farmstock.db")
+    db_path = os.environ.get("DATABASE_PATH", DEFAULT_DB_PATH)
+    if not os.path.isabs(db_path):
+        db_path = os.path.join(os.getcwd(), db_path)
+    return db_path
 
 
-def get_db() -> sqlite3.Connection:
-    db_path = get_db_path()
+def _connect(db_path: str) -> sqlite3.Connection:
     db_dir = os.path.dirname(db_path)
     if db_dir:
         os.makedirs(db_dir, exist_ok=True)
@@ -30,8 +37,23 @@ def get_db() -> sqlite3.Connection:
     return conn
 
 
+def ensure_db_ready():
+    global _DB_READY
+    if _DB_READY:
+        return
+
+    init_db()
+    seed_db()
+    _DB_READY = True
+
+
+def get_db() -> sqlite3.Connection:
+    ensure_db_ready()
+    return _connect(get_db_path())
+
+
 def init_db():
-    conn = get_db()
+    conn = _connect(get_db_path())
     cur = conn.cursor()
 
     cur.executescript("""
@@ -122,7 +144,7 @@ def init_db():
 
 
 def seed_db():
-    conn = get_db()
+    conn = _connect(get_db_path())
     cur = conn.cursor()
 
     # Check if already seeded

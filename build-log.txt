@@ -65,3 +65,16 @@
 
 [0;31m  [03:03:30] ✗ frontend_core FAILED (exit 1, 0m 1s)[0m
 [0;31m  [03:03:30] ✗ Check log: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/04_frontend_core.txt[0m
+./build-overnight.sh: line 124: PHASE_RESULTS: bad array subscript
+[0;36m  [03:03:30] Git committed: phase 04[0m
+
+
+[0;34m============================================================[0m
+[0;34m  [03:03:30] PHASE 5/7: React frontend — profile, products, insights[0m
+[0;34m============================================================[0m
+
+[1;33m  [03:03:30] Prompt length: 1062 chars | Max turns: 100[0m
+[1;33m  [03:03:30] Log file: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/05_frontend_pages.txt[0m
+
+[0;31m  [03:03:31] ✗ frontend_pages FAILED (exit 1, 0m 1s)[0m
+[0;31m  [03:03:31] ✗ Check log: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/05_frontend_pages.txt[0m

@@ -78,3 +78,16 @@
 
 [0;31m  [03:03:31] ✗ frontend_pages FAILED (exit 1, 0m 1s)[0m
 [0;31m  [03:03:31] ✗ Check log: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/05_frontend_pages.txt[0m
+./build-overnight.sh: line 124: PHASE_RESULTS: bad array subscript
+[0;36m  [03:03:31] Git committed: phase 05[0m
+
+
+[0;34m============================================================[0m
+[0;34m  [03:03:31] PHASE 6/7: WhatsApp bot layer[0m
+[0;34m============================================================[0m
+
+[1;33m  [03:03:31] Prompt length: 1363 chars | Max turns: 60[0m
+[1;33m  [03:03:31] Log file: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/06_whatsapp.txt[0m
+
+[0;31m  [03:03:32] ✗ whatsapp FAILED (exit 1, 0m 1s)[0m
+[0;31m  [03:03:32] ✗ Check log: /Users/ss/Desktop/farmstockai/Farmstock-AI/build-logs/06_whatsapp.txt[0m

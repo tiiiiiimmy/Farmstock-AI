@@ -1,9 +1,20 @@
 """
 Telegram message sender via the Bot API.
 """
+import html
 import os
+import re
 
 import httpx
+
+
+_BOLD_PATTERN = re.compile(r"\*(.+?)\*")
+
+
+def _to_telegram_html(message: str) -> str:
+    """Convert the app's simple WhatsApp-style formatting to Telegram HTML."""
+    escaped = html.escape(message or "")
+    return _BOLD_PATTERN.sub(r"<b>\1</b>", escaped)
 
 
 def send_message(chat_id: str, message: str) -> bool:
@@ -20,7 +31,8 @@ def send_message(chat_id: str, message: str) -> bool:
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "chat_id": chat_id,
-        "text": message,
+        "text": _to_telegram_html(message),
+        "parse_mode": "HTML",
     }
 
     try:

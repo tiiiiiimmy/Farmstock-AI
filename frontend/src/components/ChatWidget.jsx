@@ -1,4 +1,6 @@
 import { useState, useTransition } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { api, DEFAULT_FARM_ID } from "../api/client";
 
 export default function ChatWidget() {
@@ -48,7 +50,15 @@ export default function ChatWidget() {
             key={`${entry.role}-${index}`}
             className={entry.role === "assistant" ? "bubble bubble-ai" : "bubble bubble-user"}
           >
-            {entry.content}
+            {entry.role === "assistant" ? (
+              <div className="markdown-body">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {entry.content}
+                </ReactMarkdown>
+              </div>
+            ) : (
+              entry.content
+            )}
           </div>
         ))}
       </div>

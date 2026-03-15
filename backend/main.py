@@ -14,6 +14,7 @@ load_dotenv()
 from .database import ensure_db_ready
 from .routers import farms, orders, products, predictions, recommendations, alerts, place_order, spending, chat
 from .whatsapp import webhook
+from .telegram import webhook as telegram_webhook
 
 app = FastAPI(title="FarmStock AI", version="1.0.0")
 
@@ -41,6 +42,7 @@ app.include_router(place_order.router, prefix="/api")
 app.include_router(spending.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(webhook.router, prefix="/api")
+app.include_router(telegram_webhook.router, prefix="/api")
 
 
 @app.get("/health")

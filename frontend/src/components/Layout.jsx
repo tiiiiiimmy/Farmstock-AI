@@ -14,7 +14,7 @@ export default function Layout() {
       <aside className="sidebar">
         <div className="brand">
           <p className="eyebrow">Farm supply command center</p>
-          <h1>FarmStock AI</h1>
+          <img className="brand-logo" src="/logo1.png" alt="FarmStock AI" />
           <p className="brand-copy">
             Predict stock-outs, place supplier orders, and keep the office view in
             sync with the FarmStock bot.

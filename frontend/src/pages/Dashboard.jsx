@@ -13,33 +13,43 @@ export default function DashboardPage() {
     queryKey: ["alerts"],
     queryFn: () => api.getAlerts(DEFAULT_FARM_ID)
   });
-  const spendingQuery = useQuery({
-    queryKey: ["spending", "month"],
-    queryFn: () => api.getSpending(DEFAULT_FARM_ID, "month")
-  });
 
   const predictions = predictionsQuery.data || [];
-  const urgent = predictions.filter((item) => item.urgency !== "green");
-  const totalSpend = spendingQuery.data?.total_spend || 0;
+  const urgent = predictions.filter((item) => item.reorder_now);
+  const averageStockPct = predictions.length
+    ? Math.round(
+        predictions.reduce((sum, item) => sum + (item.current_stock_pct || 0), 0) /
+          predictions.length
+      )
+    : 0;
 
   return (
     <div className="page-grid">
       <section className="metrics-grid">
         <MetricCard label="Tracked products" value={predictions.length} hint="Seeded catalogue connected" />
-        <MetricCard label="Urgent items" value={urgent.length} tone="warn" hint="Red or amber reorder risk" />
         <MetricCard
-          label="Monthly spend"
-          value={`NZD ${totalSpend.toLocaleString()}`}
-          hint="Current period from backend analytics"
+          label="Below reorder line"
+          value={urgent.length}
+          tone="warn"
+          hint="Current stock is under delivery-gap burn level"
+        />
+        <MetricCard
+          label="Average stock"
+          value={`${averageStockPct}%`}
+          hint="Across simulated inventory snapshots"
         />
         <MetricCard
           label="Next recommended order"
           value={predictions[0]?.product_name || "No data"}
-          hint={predictions[0]?.recommended_order_date || "Awaiting predictions"}
+          hint={
+            predictions[0]?.reorder_threshold_pct
+              ? `Reorder line: ${predictions[0].reorder_threshold_pct}%`
+              : "Awaiting predictions"
+          }
         />
       </section>
 
-      <InventoryChart data={predictions.slice(0, 12)} />
+      <InventoryChart data={predictions} />
       <AlertFeed alerts={alertsQuery.data || []} />
     </div>
   );

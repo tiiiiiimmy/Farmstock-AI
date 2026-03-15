@@ -17,7 +17,7 @@ export default function Layout() {
           <h1>FarmStock AI</h1>
           <p className="brand-copy">
             Predict stock-outs, place supplier orders, and keep the office view in
-            sync with WhatsApp.
+            sync with the FarmStock bot.
           </p>
         </div>
 
@@ -39,8 +39,8 @@ export default function Layout() {
       <main className="content">
         <header className="topbar">
           <div>
-            <p className="eyebrow">Hackathon MVP</p>
-            <h2>Shared dashboard for web + WhatsApp operations</h2>
+            <p className="eyebrow">Clawcat Technologies</p>
+            <h2>Shared dashboard for web + FarmStock bot operations</h2>
           </div>
         </header>
 

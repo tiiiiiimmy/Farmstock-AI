@@ -13,8 +13,8 @@ export default function Layout() {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <p className="eyebrow">Farm supply command center</p>
-          <img className="brand-logo" src="/logo1.png" alt="FarmStock AI" />
+          <p className="eyebrow">Farm supply dashboard</p>
+          <img className="brand-logo" src="/logo.png" alt="FarmStock AI" />
           <p className="brand-copy">
             Predict stock-outs, place supplier orders, and keep the office view in
             sync with the FarmStock bot.

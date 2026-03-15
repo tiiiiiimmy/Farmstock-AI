@@ -18,6 +18,13 @@ load_dotenv()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DB_PATH = os.path.join(BASE_DIR, "farmstock.db")
 _DB_READY = False
+LEAD_TIME_BY_CATEGORY = {
+    "feed": 6,
+    "fertiliser": 10,
+    "veterinary": 5,
+    "chemical": 7,
+    "equipment": 14,
+}
 
 
 def get_db_path() -> str:
@@ -123,6 +130,22 @@ def init_db():
             FOREIGN KEY (product_id) REFERENCES products(id)
         );
 
+        CREATE TABLE IF NOT EXISTS inventory_snapshots (
+            id TEXT PRIMARY KEY,
+            farm_id TEXT NOT NULL,
+            product_id TEXT NOT NULL,
+            current_quantity REAL NOT NULL,
+            current_stock_pct REAL NOT NULL,
+            estimated_daily_usage REAL NOT NULL,
+            lead_time_days INTEGER NOT NULL,
+            reorder_threshold_pct REAL NOT NULL,
+            lead_time_consumption_pct REAL NOT NULL,
+            expiry_date TEXT,
+            updated_at TEXT,
+            FOREIGN KEY (farm_id) REFERENCES farms(id),
+            FOREIGN KEY (product_id) REFERENCES products(id)
+        );
+
         CREATE TABLE IF NOT EXISTS placed_orders (
             id TEXT PRIMARY KEY,
             farm_id TEXT NOT NULL,
@@ -150,6 +173,8 @@ def seed_db():
     # Check if already seeded
     row = cur.execute("SELECT COUNT(*) FROM farms").fetchone()
     if row[0] > 0:
+        _seed_inventory_snapshots(conn, cur, "farm-001")
+        conn.commit()
         conn.close()
         return
 
@@ -389,5 +414,97 @@ def seed_db():
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, a)
 
+    _seed_inventory_snapshots(conn, cur, farm_id)
+
     conn.commit()
     conn.close()
+
+
+def _seed_inventory_snapshots(conn, cur, farm_id: str):
+    existing = cur.execute(
+        "SELECT COUNT(*) FROM inventory_snapshots WHERE farm_id = ?",
+        (farm_id,),
+    ).fetchone()[0]
+    if existing > 0:
+        return
+
+    product_rows = cur.execute(
+        "SELECT * FROM products ORDER BY category, name"
+    ).fetchall()
+    now = datetime.utcnow()
+
+    for index, product in enumerate(product_rows):
+        order_rows = cur.execute("""
+            SELECT date, quantity
+            FROM orders
+            WHERE farm_id = ? AND product_name = ?
+            ORDER BY date
+        """, (farm_id, product["name"])).fetchall()
+        if not order_rows:
+            continue
+
+        quantities = [row["quantity"] for row in order_rows]
+        recent_quantities = quantities[-3:]
+        avg_quantity = sum(recent_quantities) / len(recent_quantities)
+
+        dates = [datetime.strptime(row["date"], "%Y-%m-%d") for row in order_rows]
+        if len(dates) > 1:
+            intervals = [
+                (dates[i + 1] - dates[i]).days
+                for i in range(len(dates) - 1)
+            ]
+            avg_interval = max(7, int(sum(intervals) / len(intervals)))
+        else:
+            avg_interval = 30
+
+        lead_time_days = LEAD_TIME_BY_CATEGORY.get(product["category"], 7) + (index % 3)
+        lead_time_consumption_pct = round(
+            min(95.0, (lead_time_days / avg_interval) * 100),
+            1,
+        )
+        reorder_threshold_pct = round(
+            min(75.0, max(8.0, lead_time_consumption_pct + 5.0)),
+            1,
+        )
+
+        if index % 6 == 0:
+            current_stock_pct = max(4.0, reorder_threshold_pct - 6.0)
+        elif index % 4 == 0:
+            current_stock_pct = min(95.0, reorder_threshold_pct + 4.0)
+        else:
+            current_stock_pct = min(95.0, reorder_threshold_pct + 12.0 + (index % 5) * 6.0)
+
+        current_quantity = round(avg_quantity * (current_stock_pct / 100.0), 2)
+        estimated_daily_usage = round(avg_quantity / avg_interval, 3)
+
+        expiry_date = None
+        if product["shelf_life_days"] and product["shelf_life_days"] > 0:
+            remaining_days = max(
+                5,
+                min(
+                    product["shelf_life_days"],
+                    int(product["shelf_life_days"] * (0.18 + (index % 5) * 0.09)),
+                ),
+            )
+            expiry_date = (now + timedelta(days=remaining_days)).strftime("%Y-%m-%d")
+
+        cur.execute("""
+            INSERT INTO inventory_snapshots (
+                id, farm_id, product_id, current_quantity, current_stock_pct,
+                estimated_daily_usage, lead_time_days, reorder_threshold_pct,
+                lead_time_consumption_pct, expiry_date, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            f"inv-{index + 1:03d}",
+            farm_id,
+            product["id"],
+            current_quantity,
+            round(current_stock_pct, 1),
+            estimated_daily_usage,
+            lead_time_days,
+            reorder_threshold_pct,
+            lead_time_consumption_pct,
+            expiry_date,
+            now.isoformat(),
+        ))

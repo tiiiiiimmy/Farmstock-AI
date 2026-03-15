@@ -426,6 +426,18 @@ textarea {
 
 .chat-thread {
   min-height: 320px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+}
+
+.chat-thread::-webkit-scrollbar {
+  width: 10px;
+}
+
+.chat-thread::-webkit-scrollbar-thumb {
+  background: rgba(31, 107, 72, 0.28);
+  border-radius: 999px;
 }
 
 .bubble {
@@ -433,6 +445,7 @@ textarea {
   padding: 0.9rem 1rem;
   border-radius: 18px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .bubble-ai {
@@ -475,6 +488,11 @@ textarea {
   display: grid;
   gap: 0.8rem;
   margin-top: 1rem;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
 }
 
 .spending-summary {

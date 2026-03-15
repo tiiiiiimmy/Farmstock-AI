@@ -8,6 +8,7 @@ import httpx
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MAX_OUTPUT_TOKENS = int(os.environ.get("GEMINI_MAX_OUTPUT_TOKENS", "2048"))
 GEMINI_API_URL = (
     f"https://generativelanguage.googleapis.com/v1beta/models/"
     f"{GEMINI_MODEL}:generateContent"
@@ -49,7 +50,7 @@ async def chat_with_ai(
         ],
         "generationConfig": {
             "temperature": 0.4,
-            "maxOutputTokens": 1024,
+            "maxOutputTokens": GEMINI_MAX_OUTPUT_TOKENS,
         },
     }
 

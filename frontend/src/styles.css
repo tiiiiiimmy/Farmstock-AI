@@ -79,6 +79,15 @@ textarea {
   font-family: Georgia, "Times New Roman", serif;
 }
 
+.brand-logo {
+  display: block;
+  width: min(220px, 100%);
+  height: auto;
+  margin: 0.25rem 0 0.9rem;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
 .eyebrow {
   margin: 0 0 0.5rem;
   text-transform: uppercase;

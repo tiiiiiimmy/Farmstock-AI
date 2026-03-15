@@ -59,7 +59,7 @@ export default function FarmProfilePage() {
       nextErrors.land_area_ha = "Land area must be greater than 0";
     }
     if (draft.whatsapp_number && draft.whatsapp_number.trim().length < 8) {
-      nextErrors.whatsapp_number = "WhatsApp number looks too short";
+      nextErrors.whatsapp_number = "FarmStock bot contact looks too short";
     }
     if (draft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email)) {
       nextErrors.email = "Enter a valid email address";
@@ -125,7 +125,7 @@ export default function FarmProfilePage() {
             {errors.land_area_ha ? <span className="field-error">{errors.land_area_ha}</span> : null}
           </label>
           <label className="field-group">
-            <span className="field-label">WhatsApp number</span>
+            <span className="field-label">FarmStock bot contact</span>
             <input name="whatsapp_number" value={draft.whatsapp_number || ""} onChange={updateField} />
             {errors.whatsapp_number ? <span className="field-error">{errors.whatsapp_number}</span> : null}
           </label>

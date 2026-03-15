@@ -1,17 +1,17 @@
 """
-Claude AI integration for FarmStock AI chat and intelligent features.
+Gemini AI integration for FarmStock AI chat and intelligent features.
 """
 import os
 from typing import List
 
-try:
-    import anthropic
-except ModuleNotFoundError:  # pragma: no cover - optional local dev dependency
-    anthropic = None
+import httpx
 
-client = None
-if anthropic and os.environ.get("ANTHROPIC_API_KEY"):
-    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_API_URL = (
+    f"https://generativelanguage.googleapis.com/v1beta/models/"
+    f"{GEMINI_MODEL}:generateContent"
+)
 
 SYSTEM_PROMPT = """You are FarmStock AI, an intelligent farm supply management assistant for New Zealand and Australian dairy farms.
 
@@ -27,16 +27,79 @@ You have access to the farmer's complete purchase history, farm profile, and AI 
 Keep responses concise and practical - farmers are busy people. Use NZD for prices. Reference specific products and dates from their history when relevant."""
 
 
+async def chat_with_ai(
+    message: str,
+    farm_context: dict,
+    conversation_history: List[dict] = [],
+) -> str:
+    """Send a message to Gemini with farm context and return the assistant's reply."""
+    if not GEMINI_API_KEY:
+        return _fallback_chat_response(message, farm_context)
+
+    prompt = _build_prompt(message, farm_context, conversation_history)
+    payload = {
+        "system_instruction": {
+            "parts": [{"text": SYSTEM_PROMPT}],
+        },
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": prompt}],
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.4,
+            "maxOutputTokens": 1024,
+        },
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.post(
+                GEMINI_API_URL,
+                params={"key": GEMINI_API_KEY},
+                json=payload,
+            )
+            response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        status = exc.response.status_code
+        if status in (401, 403):
+            raise RuntimeError("Gemini API key is invalid or unauthorized") from exc
+        raise RuntimeError(f"Gemini API request failed with status {status}") from exc
+    except httpx.HTTPError as exc:
+        raise RuntimeError("Unable to reach the Gemini API") from exc
+
+    data = response.json()
+    candidates = data.get("candidates", [])
+    if not candidates:
+        raise RuntimeError("Gemini returned no response candidates")
+
+    parts = candidates[0].get("content", {}).get("parts", [])
+    text = "".join(part.get("text", "") for part in parts).strip()
+    if not text:
+        raise RuntimeError("Gemini returned an empty response")
+    return text
+
+
 async def chat_with_claude(
     message: str,
     farm_context: dict,
     conversation_history: List[dict] = [],
 ) -> str:
-    """Send a message to Claude with farm context and return the assistant's reply."""
-    if client is None:
-        return _fallback_chat_response(message, farm_context)
+    """Backward-compatible alias for older imports."""
+    return await chat_with_ai(message, farm_context, conversation_history)
 
-    context_str = f"""
+
+def _build_prompt(message: str, farm_context: dict, conversation_history: List[dict]) -> str:
+    history_lines = []
+    for msg in conversation_history[-10:]:
+        role = msg.get("role")
+        content = msg.get("content")
+        if role in ("user", "assistant") and content:
+            history_lines.append(f"{role.title()}: {content}")
+
+    history_block = "\n".join(history_lines) if history_lines else "No previous conversation"
+    return f"""
 Farm Profile:
 - Name: {farm_context.get('farm', {}).get('name', 'Unknown')}
 - Region: {farm_context.get('farm', {}).get('region', 'Unknown')}
@@ -52,30 +115,17 @@ Current Predictions:
 
 Recommendations:
 {_format_recommendations(farm_context.get('recommendations', []))}
-"""
 
-    messages = []
-    for msg in conversation_history[-10:]:  # Keep last 10 turns for context
-        if msg.get("role") in ("user", "assistant") and msg.get("content"):
-            messages.append({"role": msg["role"], "content": msg["content"]})
+Conversation History:
+{history_block}
 
-    messages.append({
-        "role": "user",
-        "content": f"{context_str}\n\nFarmer's message: {message}",
-    })
-
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=1024,
-        system=SYSTEM_PROMPT,
-        messages=messages,
-    )
-
-    return response.content[0].text
+Farmer's message:
+{message}
+""".strip()
 
 
 def _fallback_chat_response(message: str, farm_context: dict) -> str:
-    """Provide a deterministic local response when Anthropic isn't configured."""
+    """Provide a deterministic local response when Gemini isn't configured."""
     lower = message.lower()
     predictions = farm_context.get("predictions", [])
     recommendations = farm_context.get("recommendations", [])
@@ -85,7 +135,7 @@ def _fallback_chat_response(message: str, farm_context: dict) -> str:
         recent_orders = farm_context.get("recent_orders", [])
         total = sum((order.get("total_price") or 0) for order in recent_orders)
         return (
-            f"FarmStock AI local mode: I can't reach Claude right now, but I can still help. "
+            f"FarmStock AI local mode: Gemini isn't configured yet, but I can still help. "
             f"Across the {len(recent_orders)} most recent orders for {farm_name}, spend totals "
             f"NZD {total:,.2f}."
         )
@@ -106,7 +156,7 @@ def _fallback_chat_response(message: str, farm_context: dict) -> str:
         )
 
     return (
-        "FarmStock AI local mode: Claude isn't configured yet, but the backend is running. "
+        "FarmStock AI local mode: Gemini isn't configured yet, but the backend is running. "
         "Ask about stock, orders, or spending once seed data is loaded."
     )
 
@@ -115,13 +165,13 @@ def _format_orders(orders: list) -> str:
     if not orders:
         return "No recent orders"
     lines = []
-    for o in orders[:10]:
-        unit_price = o.get("unit_price") or 0
-        total_price = o.get("total_price") or 0
+    for order in orders[:10]:
+        unit_price = order.get("unit_price") or 0
+        total_price = order.get("total_price") or 0
         lines.append(
-            f"- {o.get('date')}: {o.get('product_name')} "
-            f"{o.get('quantity')} {o.get('unit')} "
-            f"@ ${unit_price:.2f}/{o.get('unit')} (${total_price:.2f})"
+            f"- {order.get('date')}: {order.get('product_name')} "
+            f"{order.get('quantity')} {order.get('unit')} "
+            f"@ NZD {unit_price:.2f}/{order.get('unit')} (NZD {total_price:.2f})"
         )
     return "\n".join(lines)
 
@@ -130,19 +180,21 @@ def _format_predictions(predictions: list) -> str:
     if not predictions:
         return "No predictions available"
     lines = []
-    for p in predictions[:5]:
-        days = p.get("days_until_depletion", "unknown")
-        urgency = p.get("urgency", "unknown")
+    for prediction in predictions[:5]:
+        days = prediction.get("days_until_depletion", "unknown")
+        urgency = prediction.get("urgency", "unknown")
         lines.append(
-            f"- {p.get('product_name')}: ~{days} days until depletion ({urgency} urgency)"
+            f"- {prediction.get('product_name')}: ~{days} days until depletion ({urgency} urgency)"
         )
     return "\n".join(lines)
 
 
-def _format_recommendations(recs: list) -> str:
-    if not recs:
+def _format_recommendations(recommendations: list) -> str:
+    if not recommendations:
         return "No recommendations"
     lines = []
-    for r in recs[:3]:
-        lines.append(f"- {r.get('product_name')}: {r.get('reasoning', '')}")
+    for recommendation in recommendations[:3]:
+        lines.append(
+            f"- {recommendation.get('product_name')}: {recommendation.get('reasoning', '')}"
+        )
     return "\n".join(lines)

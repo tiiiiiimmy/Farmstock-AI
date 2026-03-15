@@ -4,7 +4,7 @@ AI chat endpoint: routes farmer messages to Claude with full farm context.
 from fastapi import APIRouter, HTTPException
 from ..database import get_db
 from ..models import ChatMessage
-from ..ai.engine import chat_with_claude
+from ..ai.engine import chat_with_ai
 from ..ai.predictor import get_all_predictions
 from ..ai.recommender import get_recommendations
 
@@ -54,11 +54,14 @@ async def chat(msg: ChatMessage):
         "recommendations": recommendations,
     }
 
-    response_text = await chat_with_claude(
-        message=msg.message,
-        farm_context=farm_context,
-        conversation_history=msg.conversation_history or [],
-    )
+    try:
+        response_text = await chat_with_ai(
+            message=msg.message,
+            farm_context=farm_context,
+            conversation_history=msg.conversation_history or [],
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return {
         "response": response_text,

@@ -179,6 +179,7 @@ textarea {
 .panel {
   border-radius: 28px;
   padding: 1.4rem;
+  overflow: hidden;
 }
 
 .panel-header {
@@ -199,13 +200,85 @@ textarea {
   gap: 1rem;
 }
 
+.chart-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.5rem;
+}
+
+.chart-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.chart-scroll::-webkit-scrollbar-thumb {
+  background: rgba(31, 107, 72, 0.28);
+  border-radius: 999px;
+}
+
+.chart-tooltip {
+  max-width: 260px;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 252, 246, 0.96);
+  box-shadow: var(--shadow);
+}
+
+.chart-tooltip p {
+  margin: 0.35rem 0 0;
+}
+
+.chart-legend-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 252, 246, 0.92);
+  color: var(--muted);
+}
+
+.legend-chip::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.legend-chip-stock::before {
+  background: var(--green);
+}
+
+.legend-chip-threshold::before {
+  height: 0;
+  border-top: 2px dashed #23352c;
+  border-radius: 0;
+}
+
 .alert-card,
 .product-card,
-.supplier-card {
+.supplier-card,
+.inventory-summary-card {
   border: 1px solid var(--line);
   border-radius: 22px;
   padding: 1rem;
   background: var(--panel-strong);
+}
+
+.inventory-summary-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .alert-meta {
@@ -247,6 +320,30 @@ textarea {
 .form-grid {
   display: grid;
   gap: 0.9rem;
+}
+
+.field-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.field-error {
+  font-size: 0.82rem;
+  color: var(--red);
+}
+
+.form-error-banner {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border-radius: 14px;
+  background: var(--red-soft);
+  color: var(--red);
 }
 
 .data-table {
@@ -306,6 +403,14 @@ textarea {
   background: rgba(31, 107, 72, 0.08);
 }
 
+.inventory-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+  align-items: stretch;
+}
+
 .product-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
@@ -328,6 +433,33 @@ textarea {
 .bubble-user {
   background: #f8ead1;
   margin-left: auto;
+}
+
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body p,
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0.45rem 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.2rem;
+}
+
+.markdown-body li {
+  margin: 0.2rem 0;
+}
+
+.markdown-body strong {
+  color: var(--ink);
 }
 
 .chat-form {

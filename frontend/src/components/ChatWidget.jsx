@@ -1,4 +1,4 @@
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { api, DEFAULT_FARM_ID } from "../api/client";
@@ -12,6 +12,14 @@ export default function ChatWidget() {
     }
   ]);
   const [isPending, startTransition] = useTransition();
+  const threadRef = useRef(null);
+
+  useEffect(() => {
+    if (!threadRef.current) {
+      return;
+    }
+    threadRef.current.scrollTop = threadRef.current.scrollHeight;
+  }, [thread]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -39,12 +47,12 @@ export default function ChatWidget() {
   }
 
   return (
-    <section className="panel">
+    <section className="panel chat-panel">
       <div className="panel-header">
         <h3>Ask FarmStock AI</h3>
       </div>
 
-      <div className="chat-thread">
+      <div ref={threadRef} className="chat-thread">
         {thread.map((entry, index) => (
           <div
             key={`${entry.role}-${index}`}

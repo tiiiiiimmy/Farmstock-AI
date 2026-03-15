@@ -77,6 +77,7 @@ Edit `.env` and fill in the values you want to use. At minimum, for AI chat:
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MAX_OUTPUT_TOKENS=2048
 
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_DEFAULT_FARM_ID=farm-001
@@ -92,6 +93,7 @@ DATABASE_PATH=backend/farmstock.db
 Notes:
 
 - `GEMINI_API_KEY` is required for real AI responses.
+- `GEMINI_MAX_OUTPUT_TOKENS` controls how long AI replies can be.
 - If `GEMINI_API_KEY` is missing, chat falls back to local demo logic.
 - `TELEGRAM_BOT_TOKEN` is only needed if you want to connect the Telegram bot.
 - SMTP credentials are optional unless you want real order emails.

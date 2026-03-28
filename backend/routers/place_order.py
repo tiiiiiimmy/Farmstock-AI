@@ -4,10 +4,11 @@ Order placement endpoints: send purchase order emails and record in placed_order
 import json
 import uuid
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Depends
 from ..database import get_db
 from ..models import PlaceOrderRequest
-from ..email.order_email import send_order_email
+from ..auth import get_user_farm
+from ..mailer.order_email import send_order_email
 
 router = APIRouter()
 
@@ -31,20 +32,21 @@ def _generate_reference(conn) -> str:
 
 
 @router.post("/place-order", status_code=201)
-def place_order(req: PlaceOrderRequest):
+def place_order(req: PlaceOrderRequest, farm: dict = Depends(get_user_farm)):
     """
     Place a purchase order: send email to supplier and record in placed_orders table.
     """
+    data_farm_id = farm["id"]
     conn = get_db()
     try:
-        farm_row = conn.execute("SELECT * FROM farms WHERE id = ?", (req.farm_id,)).fetchone()
+        farm_row = conn.execute("SELECT * FROM farms WHERE id = ?", (data_farm_id,)).fetchone()
         if not farm_row:
             raise HTTPException(status_code=404, detail="Farm not found")
-        farm = dict(farm_row)
+        farm_data = dict(farm_row)
 
         supplier_row = conn.execute(
             "SELECT * FROM suppliers WHERE id = ? AND farm_id = ?",
-            (req.supplier_id, req.farm_id),
+            (req.supplier_id, data_farm_id),
         ).fetchone()
         if not supplier_row:
             raise HTTPException(status_code=404, detail="Supplier not found")
@@ -72,7 +74,7 @@ def place_order(req: PlaceOrderRequest):
         }
 
         # Attempt to send email
-        email_sent = send_order_email(order_data, supplier, farm)
+        email_sent = send_order_email(order_data, supplier, farm_data)
         email_sent_at = now if email_sent else None
 
         conn.execute("""
@@ -81,7 +83,7 @@ def place_order(req: PlaceOrderRequest):
                  status, email_sent_at, channel, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            order_id, req.farm_id, req.supplier_id, reference,
+            order_id, data_farm_id, req.supplier_id, reference,
             json.dumps(req.items), round(total_price, 2),
             "sent", email_sent_at, "email", now,
         ))
@@ -90,7 +92,7 @@ def place_order(req: PlaceOrderRequest):
         return {
             "id": order_id,
             "reference_number": reference,
-            "farm_id": req.farm_id,
+            "farm_id": data_farm_id,
             "supplier_id": req.supplier_id,
             "supplier_name": supplier.get("name"),
             "items": req.items,
@@ -105,8 +107,9 @@ def place_order(req: PlaceOrderRequest):
 
 
 @router.get("/placed-orders")
-def list_placed_orders(farm_id: str = Query(..., description="Farm ID")):
+def list_placed_orders(farm: dict = Depends(get_user_farm)):
     """List all placed orders for a farm, most recent first."""
+    farm_id = farm["id"]
     conn = get_db()
     try:
         rows = conn.execute(

@@ -13,5 +13,6 @@ export const queryKeys = {
   spending: {
     period: (period) => ["spending", period]
   },
-  subscription: () => ["subscription"]
+  subscription: () => ["subscription"],
+  suppliers: (farmId) => ["suppliers", farmId],
 };

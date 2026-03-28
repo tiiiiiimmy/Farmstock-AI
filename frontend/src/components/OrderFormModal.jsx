@@ -59,16 +59,17 @@ export default function OrderFormModal({
       >
         <div className="modal-header">
           <div>
+            <p className="modal-eyebrow field-label">Purchase History</p>
             <h3 id="order-modal-title">
-              {editingOrderId ? "Edit Purchase Record" : "Log Manual Purchase"}
+              {editingOrderId ? "Edit purchase record" : "Log manual purchase"}
             </h3>
           </div>
           <button
             type="button"
-            className="icon-button"
-            aria-label="Close purchase form"
+            className="secondary-button"
             onClick={onClose}
             disabled={isSubmitting}
+            style={{ padding: "0", width: "32px", height: "32px", borderRadius: "999px", fontSize: "1.1rem", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}
           >
             ×
           </button>
@@ -158,14 +159,6 @@ export default function OrderFormModal({
           <div className="form-actions">
             <button type="submit" disabled={isSubmitting}>
               {editingOrderId ? "Save changes" : "Create order"}
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              Cancel
             </button>
           </div>
         </form>

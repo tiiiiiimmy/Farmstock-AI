@@ -1,175 +1,245 @@
+/* ═══════════════════════════════════════════════════════════
+   PAGES — Dashboard, Orders, Products, Insights, Profile
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Page scaffolding ─────────────────────────────────────── */
+
 .page-grid {
   display: grid;
-  gap: 1.5rem;
+  gap: 1.1rem;
 }
 
 .two-column {
   grid-template-columns: 0.9fr 1.1fr;
 }
 
+/* ─── Page title ───────────────────────────────────────────── */
+
+.page-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin: 0 0 1.1rem;
+}
+
+/* ─── Metrics grid ─────────────────────────────────────────── */
+
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .metric {
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  padding: 1.25rem;
-  background: var(--panel);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 1.2rem 1.25rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--t);
+  animation: fadeUp 0.28s ease both;
+}
+
+.metric:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .metric p,
 .metric span {
-  color: var(--muted);
+  color: var(--ink-2);
+  font-size: 0.78rem;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 
 .metric strong {
   display: block;
   margin-top: 0.4rem;
-  font-size: 1.6rem;
+  font-size: 1.65rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .metric-warn {
-  background: linear-gradient(180deg, #fff7eb, #fdf0dd);
+  background: linear-gradient(145deg, #FFFCF5, #FEF4E2);
+  border-color: rgba(184, 109, 10, 0.15);
 }
+
+.metric-hint {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+/* ─── Chart ────────────────────────────────────────────────── */
 
 .chart-wrap,
 .table-wrap,
-.chat-thread,
 .alert-list,
-.stack,
-.product-grid {
+.stack {
   display: grid;
   gap: 1rem;
 }
 
+.panel-table {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panel-table .table-wrap {
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+}
+
+.panel-table .table-wrap-scroll {
+  height: 100%;
+  max-height: none;
+}
+
 .chart-scroll {
   width: 100%;
-  max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 0.5rem;
 }
 
 .chart-scroll::-webkit-scrollbar {
-  height: 10px;
+  height: 5px;
 }
 
 .chart-scroll::-webkit-scrollbar-thumb {
-  background: rgba(31, 107, 72, 0.28);
+  background: var(--border-strong);
   border-radius: 999px;
 }
 
 .chart-tooltip {
-  max-width: 260px;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: rgba(255, 252, 246, 0.96);
-  box-shadow: var(--shadow);
+  max-width: 220px;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  font-size: 0.82rem;
 }
 
 .chart-tooltip p {
-  margin: 0.35rem 0 0;
+  margin: 0.3rem 0 0;
 }
 
 .chart-legend-inline {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.5rem;
   margin-top: 0.75rem;
 }
 
 .legend-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.45rem 0.75rem;
-  border: 1px solid var(--line);
+  gap: 0.45rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgba(255, 252, 246, 0.92);
-  color: var(--muted);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 0.75rem;
 }
 
 .legend-chip::before {
   content: "";
   display: inline-block;
-  width: 18px;
-  height: 10px;
+  width: 12px;
+  height: 7px;
   border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .legend-chip-stock::before {
-  background: var(--green);
+  background: var(--brand);
 }
 
 .legend-chip-threshold::before {
   height: 0;
-  border-top: 2px dashed #23352c;
+  border-top: 2px dashed var(--ink);
   border-radius: 0;
 }
 
+/* ─── Inventory summary ────────────────────────────────────── */
+
 .inventory-summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
-  gap: 1rem;
-  margin-top: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 0.75rem;
+  margin-top: 1.1rem;
   align-items: stretch;
 }
 
+/* ─── Product grid ─────────────────────────────────────────── */
+
 .product-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* ─── Chat ─────────────────────────────────────────────────── */
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-thread {
-  min-height: 320px;
-  max-height: 520px;
+  display: grid;
+  gap: 0.75rem;
+  min-height: 260px;
+  max-height: 460px;
   overflow-y: auto;
-  padding-right: 0.35rem;
+  padding-right: 0.25rem;
 }
 
 .chat-thread::-webkit-scrollbar {
-  width: 10px;
+  width: 5px;
 }
 
 .chat-thread::-webkit-scrollbar-thumb {
-  background: rgba(31, 107, 72, 0.28);
+  background: var(--border-strong);
   border-radius: 999px;
 }
 
 .bubble {
-  max-width: 88%;
-  padding: 0.9rem 1rem;
-  border-radius: 18px;
-  line-height: 1.5;
+  max-width: 86%;
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  line-height: 1.55;
   overflow-wrap: anywhere;
+  font-size: 0.875rem;
 }
 
 .bubble-ai {
-  background: #eef4ed;
+  background: var(--brand-light);
+  color: var(--ink);
 }
 
 .bubble-user {
-  background: #f8ead1;
+  background: var(--amber-soft);
   margin-left: auto;
 }
 
-.markdown-body > :first-child {
-  margin-top: 0;
-}
-
-.markdown-body > :last-child {
-  margin-bottom: 0;
-}
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body > :last-child  { margin-bottom: 0; }
 
 .markdown-body p,
 .markdown-body ul,
 .markdown-body ol {
-  margin: 0.45rem 0;
+  margin: 0.4rem 0;
 }
 
 .markdown-body ul,
@@ -177,35 +247,97 @@
   padding-left: 1.2rem;
 }
 
-.markdown-body li {
-  margin: 0.2rem 0;
-}
-
-.markdown-body strong {
-  color: var(--ink);
-}
+.markdown-body li   { margin: 0.2rem 0; }
+.markdown-body strong { color: var(--ink); }
 
 .chat-form {
   display: grid;
-  gap: 0.8rem;
-  margin-top: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 
-.chat-panel {
-  display: flex;
-  flex-direction: column;
-}
+/* ─── Spending summary ─────────────────────────────────────── */
 
 .spending-summary {
   margin-top: 1rem;
   padding: 1rem;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #edf6ee, #fff5e6);
+  border-radius: var(--r-lg);
+  background: var(--brand-light);
+  border: 1px solid rgba(20, 92, 51, 0.1);
+  font-size: 0.875rem;
 }
 
-@media (max-width: 1100px) {
-  .two-column,
+/* ═══════════════════════════════════════════════════════════
+   MOBILE  ≤ 768px
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .two-column {
+    grid-template-columns: 1fr;
+  }
+
   .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+
+  .metric {
+    padding: 1rem;
+    border-radius: var(--r-lg);
+  }
+
+  .metric strong {
+    font-size: 1.4rem;
+  }
+
+  .panel {
+    padding: 1.1rem;
+    border-radius: var(--r-lg);
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .chat-thread {
+    min-height: 220px;
+    max-height: 340px;
+  }
+
+  .bubble {
+    max-width: 92%;
+    font-size: 0.85rem;
+  }
+
+  .page-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.9rem;
+  }
+
+  /* Full-width tables on mobile — allow horizontal scroll */
+  .table-wrap-scroll {
+    max-height: none;
+    border-radius: var(--r-lg);
+    border: 1px solid var(--border);
+    overflow: auto;
+  }
+
+  .data-table th,
+  .data-table td {
+    font-size: 0.8rem;
+    padding: 0.65rem 0.6rem;
+    white-space: nowrap;
+  }
+}
+
+/* ── Tablet ── */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .two-column {
     grid-template-columns: 1fr;
   }
 }

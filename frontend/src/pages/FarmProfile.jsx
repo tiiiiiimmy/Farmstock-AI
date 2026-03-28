@@ -126,15 +126,23 @@ const EMPTY_SUPPLIER = { name: "", contact_name: "", contact_email: "", categori
 
 function AddSupplierModal({ onClose, onSave, saving, error }) {
   const [form, setForm] = useState(EMPTY_SUPPLIER);
-  const set = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const [fieldErrors, setFieldErrors] = useState({});
+  const set = (e) => {
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    setFieldErrors((fe) => ({ ...fe, [e.target.name]: "" }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    const errs = {};
+    if (!form.name.trim()) errs.name = "Supplier name is required";
+    if (!form.contact_email.trim()) errs.contact_email = "Contact email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contact_email.trim())) errs.contact_email = "Enter a valid email address";
+    if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
     onSave({
       name: form.name.trim(),
       contact_name: form.contact_name.trim() || null,
-      contact_email: form.contact_email.trim() || null,
+      contact_email: form.contact_email.trim(),
       categories: form.categories
         ? form.categories.split(",").map((c) => c.trim()).filter(Boolean)
         : [],
@@ -159,23 +167,35 @@ function AddSupplierModal({ onClose, onSave, saving, error }) {
           <label className="field-group">
             <span className="field-label">Supplier name <span style={{ color: "var(--red)" }}>*</span></span>
             <input name="name" value={form.name} onChange={set} placeholder="e.g. AgriSupply NZ" autoFocus />
+            {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
           </label>
           <label className="field-group">
-            <span className="field-label">Contact name</span>
+            <span className="field-label">Contact name <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></span>
             <input name="contact_name" value={form.contact_name} onChange={set} placeholder="e.g. Jane Smith" />
           </label>
           <label className="field-group">
-            <span className="field-label">Contact email</span>
+            <span className="field-label">Contact email <span style={{ color: "var(--red)" }}>*</span></span>
             <input name="contact_email" type="email" value={form.contact_email} onChange={set} placeholder="jane@supplier.co.nz" />
+            {fieldErrors.contact_email && <span className="field-error">{fieldErrors.contact_email}</span>}
           </label>
           <label className="field-group">
             <span className="field-label">Categories <span className="muted" style={{ fontWeight: 400 }}>(comma-separated)</span></span>
             <input name="categories" value={form.categories} onChange={set} placeholder="e.g. Feed, Supplements, Dairy" />
           </label>
           {error && <p className="form-error-banner">{error}</p>}
-          <button type="submit" disabled={saving || !form.name.trim()}>
-            {saving ? "Adding…" : "Add supplier"}
-          </button>
+          <div className="form-actions">
+            <button type="submit" disabled={saving}>
+              {saving ? "Adding…" : "Add supplier"}
+            </button>
+            <button
+              type="button"
+              className="secondary-button mobile-modal-cancel"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+          </div>
         </form>
       </div>
     </div>

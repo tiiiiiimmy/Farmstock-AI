@@ -1,12 +1,13 @@
 import { useDeferredValue, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { queryKeys } from "../api/queryKeys";
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const productsQuery = useQuery({
-    queryKey: ["products"],
+    queryKey: queryKeys.products(),
     queryFn: api.getProducts
   });
 

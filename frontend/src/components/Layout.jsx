@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import FloatingChat from "./FloatingChat";
 
 /* ── SVG Icons ──────────────────────────────────────────────── */
 
@@ -39,20 +40,14 @@ const ProductsIcon = () => (
   </svg>
 );
 
-const InsightsIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-  </svg>
-);
 
 /* ── Nav items ──────────────────────────────────────────────── */
 
 const navItems = [
   { to: "/dashboard",    label: "Overview",  Icon: DashIcon },
+  { to: "/products",     label: "Products",  Icon: ProductsIcon },
   { to: "/orders",       label: "Orders",    Icon: OrdersIcon },
   { to: "/farm-profile", label: "Farm",      Icon: FarmIcon },
-  { to: "/products",     label: "Products",  Icon: ProductsIcon },
-  { to: "/insights",     label: "Insights",  Icon: InsightsIcon },
 ];
 
 /* ── Layout ─────────────────────────────────────────────────── */
@@ -112,6 +107,8 @@ export default function Layout() {
 
         <Outlet />
       </main>
+
+      <FloatingChat />
 
       {/* ── Mobile bottom navigation ── */}
       <nav className="bottom-nav" aria-label="Main navigation">

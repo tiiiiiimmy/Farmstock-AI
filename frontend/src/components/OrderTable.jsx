@@ -64,8 +64,8 @@ export default function OrderTable({ orders = [], onCreate, onDelete, onEdit, ed
                 <td>NZD {Number(order.unit_price || 0).toFixed(2)}</td>
                 <td>NZD {Number(order.total_price || 0).toFixed(2)}</td>
                 <td>{order.supplier_id || "-"}</td>
-                <td>
-                  <button className="ghost-button" onClick={() => onEdit(order)}>
+                <td className="table-actions">
+                  <button className="ghost-button ghost-button-positive" onClick={() => onEdit(order)}>
                     Edit
                   </button>
                   <button className="ghost-button" onClick={() => onDelete(order.id)}>

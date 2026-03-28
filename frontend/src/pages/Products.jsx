@@ -1,6 +1,6 @@
 import { useDeferredValue, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api, DEFAULT_FARM_ID } from "../api/client";
+import { api } from "../api/client";
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
@@ -13,7 +13,6 @@ export default function ProductsPage() {
   const orderMutation = useMutation({
     mutationFn: (product) =>
       api.placeOrder({
-        farm_id: DEFAULT_FARM_ID,
         supplier_id: "sup-001",
         items: [
           {

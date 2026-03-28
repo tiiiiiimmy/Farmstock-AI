@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api, DEFAULT_FARM_ID } from "../api/client";
+import { api } from "../api/client";
 import AlertFeed from "../components/AlertFeed";
 import InventoryChart from "../components/InventoryChart";
 import MetricCard from "../components/MetricCard";
@@ -7,11 +7,11 @@ import MetricCard from "../components/MetricCard";
 export default function DashboardPage() {
   const predictionsQuery = useQuery({
     queryKey: ["predictions"],
-    queryFn: () => api.getPredictions(DEFAULT_FARM_ID)
+    queryFn: () => api.getPredictions()
   });
   const alertsQuery = useQuery({
     queryKey: ["alerts"],
-    queryFn: () => api.getAlerts(DEFAULT_FARM_ID)
+    queryFn: () => api.getAlerts()
   });
 
   const predictions = predictionsQuery.data || [];

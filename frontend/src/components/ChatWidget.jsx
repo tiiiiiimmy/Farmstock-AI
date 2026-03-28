@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { api, DEFAULT_FARM_ID } from "../api/client";
+import { api } from "../api/client";
 
 export default function ChatWidget() {
   const [message, setMessage] = useState("");
@@ -34,7 +34,6 @@ export default function ChatWidget() {
 
     startTransition(async () => {
       const response = await api.sendChat({
-        farm_id: DEFAULT_FARM_ID,
         message: nextMessage.content,
         conversation_history: nextThread
       });

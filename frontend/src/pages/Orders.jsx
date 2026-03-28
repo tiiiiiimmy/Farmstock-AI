@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { api, DEFAULT_FARM_ID } from "../api/client";
+import { api } from "../api/client";
 import OrderTable from "../components/OrderTable";
 
 const unitOptions = ["kg", "L", "tonnes", "units", "mL", "Custom..."];
@@ -26,11 +26,11 @@ export default function OrdersPage() {
   const [submitError, setSubmitError] = useState("");
   const ordersQuery = useQuery({
     queryKey: ["orders"],
-    queryFn: () => api.getOrders(DEFAULT_FARM_ID)
+    queryFn: () => api.getOrders()
   });
 
   const createMutation = useMutation({
-    mutationFn: (payload) => api.createOrder(DEFAULT_FARM_ID, payload),
+    mutationFn: (payload) => api.createOrder(payload),
     onSuccess: () => {
       setDraft(emptyOrder);
       setEditingOrderId(null);

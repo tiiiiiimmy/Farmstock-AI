@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { api, DEFAULT_FARM_ID } from "../api/client";
+import { api } from "../api/client";
 
 export default function FarmProfilePage() {
   const queryClient = useQueryClient();
   const farmQuery = useQuery({
     queryKey: ["farm"],
-    queryFn: () => api.getFarm(DEFAULT_FARM_ID)
+    queryFn: () => api.getFarm("farm-001")
   });
   const [draft, setDraft] = useState(null);
   const [errors, setErrors] = useState({});
@@ -19,7 +19,7 @@ export default function FarmProfilePage() {
   }, [farmQuery.data]);
 
   const updateMutation = useMutation({
-    mutationFn: (payload) => api.updateFarm(DEFAULT_FARM_ID, payload),
+    mutationFn: (payload) => api.updateFarm("farm-001", payload),
     onSuccess: () => {
       setSubmitError("");
       setErrors({});

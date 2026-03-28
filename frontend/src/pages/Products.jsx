@@ -1,5 +1,5 @@
 import { useDeferredValue, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import OrderEmailModal from "../components/OrderEmailModal";
@@ -8,6 +8,7 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [orderProduct, setOrderProduct] = useState(null);
+  const queryClient = useQueryClient();
 
   const productsQuery = useQuery({
     queryKey: queryKeys.products(),
@@ -69,8 +70,10 @@ export default function ProductsPage() {
         <OrderEmailModal
           product={orderProduct}
           suppliers={suppliers}
+          farmId={farmId}
           farmName={farmName}
           onClose={() => setOrderProduct(null)}
+          onSupplierCreated={() => queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(farmId) })}
         />
       )}
     </div>

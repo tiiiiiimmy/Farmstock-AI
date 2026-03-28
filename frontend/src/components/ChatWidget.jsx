@@ -3,21 +3,34 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { api } from "../api/client";
 
+const STORAGE_KEY = "farmstock_chat_thread";
+const DEFAULT_THREAD = [
+  { role: "assistant", content: "Ask about stock levels, reorder timing, or spending patterns." }
+];
+
+function loadThread() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : DEFAULT_THREAD;
+  } catch {
+    return DEFAULT_THREAD;
+  }
+}
+
 export default function ChatWidget() {
   const [message, setMessage] = useState("");
-  const [thread, setThread] = useState([
-    {
-      role: "assistant",
-      content: "Ask about stock levels, reorder timing, or spending patterns."
-    }
-  ]);
+  const [thread, setThread] = useState(loadThread);
   const [isPending, startTransition] = useTransition();
   const threadRef = useRef(null);
 
+  // Persist thread to localStorage whenever it changes
   useEffect(() => {
-    if (!threadRef.current) {
-      return;
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(thread));
+  }, [thread]);
+
+  // Auto-scroll to latest message
+  useEffect(() => {
+    if (!threadRef.current) return;
     threadRef.current.scrollTop = threadRef.current.scrollHeight;
   }, [thread]);
 
@@ -49,6 +62,16 @@ export default function ChatWidget() {
     <section className="panel chat-panel">
       <div className="panel-header">
         <h3>Ask FarmStock AI</h3>
+        {thread.length > 1 && (
+          <button
+            type="button"
+            className="secondary-button"
+            style={{ fontSize: "0.78rem", padding: "0.35rem 0.75rem" }}
+            onClick={() => setThread(DEFAULT_THREAD)}
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       <div ref={threadRef} className="chat-thread">

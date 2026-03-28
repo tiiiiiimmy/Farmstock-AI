@@ -163,6 +163,10 @@ button:active {
   gap: 0.75rem;
 }
 
+.mobile-modal-cancel {
+  display: none;
+}
+
 /* ─── Inputs ──────────────────────────────────────────────── */
 
 input,
@@ -413,6 +417,7 @@ textarea::placeholder {
   background: rgba(12, 30, 19, 0.46);
   backdrop-filter: blur(6px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-dialog {
@@ -448,6 +453,49 @@ textarea::placeholder {
 .confirm-dialog-copy {
   margin: 0 0 1.25rem;
   color: var(--ink-2);
+}
+
+@media (max-width: 768px) {
+  .modal-backdrop {
+    align-items: start;
+    padding: 0.75rem;
+  }
+
+  .modal-dialog {
+    width: 100%;
+    min-height: calc(100dvh - 1.5rem);
+    margin-block: 0;
+    padding: 1rem;
+    border-radius: var(--r-lg);
+  }
+
+  .modal-dialog-compact {
+    min-height: auto;
+  }
+
+  .modal-dialog .form-grid {
+    gap: 0.8rem;
+  }
+
+  .modal-dialog .field-group {
+    gap: 0.3rem;
+  }
+
+  .modal-dialog input,
+  .modal-dialog select,
+  .modal-dialog textarea {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    border-radius: 12px;
+  }
+
+  .modal-dialog textarea {
+    min-height: 84px;
+  }
+
+  .mobile-modal-cancel {
+    display: inline-flex;
+  }
 }
 
 /* ─── Loading ─────────────────────────────────────────────── */

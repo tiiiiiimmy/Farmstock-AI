@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export default function OrderTable({ orders = [], onDelete, onEdit, editingOrderId }) {
+export default function OrderTable({ orders = [], onCreate, onDelete, onEdit, editingOrderId }) {
   const scrollRef = useRef(null);
   const rowRefs = useRef({});
 
@@ -20,9 +20,12 @@ export default function OrderTable({ orders = [], onDelete, onEdit, editingOrder
   }, [editingOrderId, orders]);
 
   return (
-    <section className="panel">
+    <section className="panel panel-table">
       <div className="panel-header">
         <h3>Order History</h3>
+        <button type="button" onClick={onCreate}>
+          Log Purchase
+        </button>
       </div>
 
       <div ref={scrollRef} className="table-wrap table-wrap-scroll">

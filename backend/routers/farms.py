@@ -4,9 +4,10 @@ Farm profile and supplier management endpoints.
 import json
 import uuid
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from ..database import get_db
 from ..models import Farm, FarmUpdate, Supplier, SupplierCreate, SupplierUpdate
+from ..auth import get_current_user, get_user_farm
 
 router = APIRouter()
 
@@ -26,9 +27,26 @@ def _row_to_supplier(row) -> dict:
     return d
 
 
+@router.get("/farms", response_model=list)
+def list_farms(current_user: dict = Depends(get_current_user)):
+    """List all farms owned by the authenticated user."""
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            "SELECT f.*, (SELECT COUNT(*) FROM orders WHERE farm_id = f.id) as order_count "
+            "FROM farms f WHERE f.user_id = ?",
+            (current_user["sub"],)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
 @router.get("/farm/{farm_id}", response_model=dict)
-def get_farm(farm_id: str):
+def get_farm(farm_id: str, farm: dict = Depends(get_user_farm)):
     """Retrieve farm profile with its suppliers."""
+    if farm["id"] != farm_id:
+        raise HTTPException(status_code=403, detail="Access forbidden")
     conn = get_db()
     try:
         row = conn.execute("SELECT * FROM farms WHERE id = ?", (farm_id,)).fetchone()
@@ -46,8 +64,10 @@ def get_farm(farm_id: str):
 
 
 @router.put("/farm/{farm_id}", response_model=Farm)
-def update_farm(farm_id: str, data: FarmUpdate):
+def update_farm(farm_id: str, data: FarmUpdate, farm: dict = Depends(get_user_farm)):
     """Update farm profile fields."""
+    if farm["id"] != farm_id:
+        raise HTTPException(status_code=403, detail="Access forbidden")
     conn = get_db()
     try:
         row = conn.execute("SELECT * FROM farms WHERE id = ?", (farm_id,)).fetchone()
@@ -71,8 +91,10 @@ def update_farm(farm_id: str, data: FarmUpdate):
 
 
 @router.get("/farm/{farm_id}/suppliers", response_model=list)
-def list_suppliers(farm_id: str):
+def list_suppliers(farm_id: str, farm: dict = Depends(get_user_farm)):
     """List all suppliers for a farm."""
+    if farm["id"] != farm_id:
+        raise HTTPException(status_code=403, detail="Access forbidden")
     conn = get_db()
     try:
         rows = conn.execute(
@@ -84,8 +106,10 @@ def list_suppliers(farm_id: str):
 
 
 @router.post("/farm/{farm_id}/suppliers", response_model=Supplier, status_code=201)
-def create_supplier(farm_id: str, data: SupplierCreate):
+def create_supplier(farm_id: str, data: SupplierCreate, farm: dict = Depends(get_user_farm)):
     """Create a new supplier for a farm."""
+    if farm["id"] != farm_id:
+        raise HTTPException(status_code=403, detail="Access forbidden")
     conn = get_db()
     try:
         farm = conn.execute("SELECT id FROM farms WHERE id = ?", (farm_id,)).fetchone()
@@ -109,8 +133,10 @@ def create_supplier(farm_id: str, data: SupplierCreate):
 
 
 @router.put("/farm/{farm_id}/suppliers/{supplier_id}", response_model=Supplier)
-def update_supplier(farm_id: str, supplier_id: str, data: SupplierUpdate):
+def update_supplier(farm_id: str, supplier_id: str, data: SupplierUpdate, farm: dict = Depends(get_user_farm)):
     """Update an existing supplier."""
+    if farm["id"] != farm_id:
+        raise HTTPException(status_code=403, detail="Access forbidden")
     conn = get_db()
     try:
         row = conn.execute(
@@ -138,8 +164,10 @@ def update_supplier(farm_id: str, supplier_id: str, data: SupplierUpdate):
 
 
 @router.delete("/farm/{farm_id}/suppliers/{supplier_id}", status_code=204)
-def delete_supplier(farm_id: str, supplier_id: str):
+def delete_supplier(farm_id: str, supplier_id: str, farm: dict = Depends(get_user_farm)):
     """Delete a supplier."""
+    if farm["id"] != farm_id:
+        raise HTTPException(status_code=403, detail="Access forbidden")
     conn = get_db()
     try:
         row = conn.execute(

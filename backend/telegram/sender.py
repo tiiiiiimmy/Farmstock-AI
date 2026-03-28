@@ -1,44 +1,49 @@
 """
-Telegram message sender via the Bot API.
+Telegram Bot API message sender.
 """
-import html
 import os
-import re
-
 import httpx
 
-
-_BOLD_PATTERN = re.compile(r"\*(.+?)\*")
-
-
-def _to_telegram_html(message: str) -> str:
-    """Convert the app's simple WhatsApp-style formatting to Telegram HTML."""
-    escaped = html.escape(message or "")
-    return _BOLD_PATTERN.sub(r"<b>\1</b>", escaped)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+_TELEGRAM_API_BASE = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}" if TELEGRAM_BOT_TOKEN else None
 
 
-def send_message(chat_id: str, message: str) -> bool:
+async def send_message(chat_id, text: str, parse_mode: str = "HTML") -> bool:
     """
-    Send a Telegram message to a chat ID.
-
-    Returns True on success. In demo mode with no token configured, logs to stdout.
+    Send a message to a Telegram chat. Returns True on success.
+    Falls back to logging if TELEGRAM_BOT_TOKEN is not configured.
     """
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    if not token:
-        print(f"[telegram] -> {chat_id}:\n{message}\n")
-        return True
-
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": _to_telegram_html(message),
-        "parse_mode": "HTML",
-    }
-
+    if not TELEGRAM_BOT_TOKEN or not _TELEGRAM_API_BASE:
+        print(f"[Telegram] No token configured. Would send to {chat_id}: {text[:100]}")
+        return False
     try:
-        response = httpx.post(url, json=payload, timeout=15)
-        response.raise_for_status()
-        return True
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                f"{_TELEGRAM_API_BASE}/sendMessage",
+                json={"chat_id": chat_id, "text": text, "parse_mode": parse_mode},
+            )
+            if not resp.is_success:
+                print(f"[Telegram] Send failed ({resp.status_code}): {resp.text[:200]}")
+                return False
+            return True
     except Exception as exc:
-        print(f"[telegram] Failed to send message to {chat_id}: {exc}")
+        print(f"[Telegram] Exception sending to {chat_id}: {exc}")
+        return False
+
+
+def send_message_sync(chat_id, text: str) -> bool:
+    """Synchronous wrapper for use in non-async contexts (e.g. scheduler)."""
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # We're inside an event loop — schedule as a coroutine
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(asyncio.run, send_message(chat_id, text))
+                return future.result(timeout=15)
+        else:
+            return loop.run_until_complete(send_message(chat_id, text))
+    except Exception as exc:
+        print(f"[Telegram] send_message_sync error: {exc}")
         return False

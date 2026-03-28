@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { queryKeys } from "../api/queryKeys";
 import ChatWidget from "../components/ChatWidget";
 
 export default function InsightsPage() {
   const recommendationsQuery = useQuery({
-    queryKey: ["recommendations"],
+    queryKey: queryKeys.recommendations(),
     queryFn: () => api.getRecommendations()
   });
   const spendingQuery = useQuery({
-    queryKey: ["spending", "year"],
+    queryKey: queryKeys.spending.period("year"),
     queryFn: () => api.getSpending("period=year")
   });
 

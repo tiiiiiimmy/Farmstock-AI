@@ -69,4 +69,6 @@ export const api = {
   getSuppliers: (farmId) => request(`/api/farm/${farmId}/suppliers`),
   createSupplier: (farmId, data) => request(`/api/farm/${farmId}/suppliers`, { method: "POST", body: JSON.stringify(data) }),
   deleteSupplier: (farmId, supplierId) => request(`/api/farm/${farmId}/suppliers/${supplierId}`, { method: "DELETE" }),
+  draftOrderEmail: (payload) => request("/api/draft-order-email", { method: "POST", body: JSON.stringify(payload) }),
+  sendSupplierEmail: (payload) => request("/api/send-supplier-email", { method: "POST", body: JSON.stringify(payload) }),
 }

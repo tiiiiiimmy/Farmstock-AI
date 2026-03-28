@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
+import ConfirmDialog from "../components/ConfirmDialog";
 import OrderFormModal from "../components/OrderFormModal";
 import OrderTable from "../components/OrderTable";
 
@@ -22,6 +23,7 @@ export default function OrdersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draft, setDraft] = useState(emptyOrder);
   const [editingOrderId, setEditingOrderId] = useState(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [unitMode, setUnitMode] = useState("preset");
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
@@ -58,7 +60,11 @@ export default function OrdersPage() {
       if (editingOrderId) {
         handleCloseModal();
       }
+      setPendingDeleteId(null);
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all() });
+    },
+    onError: () => {
+      setPendingDeleteId(null);
     }
   });
 
@@ -78,6 +84,22 @@ export default function OrdersPage() {
   function handleCloseModal() {
     setIsModalOpen(false);
     resetFormState();
+  }
+
+  function handleRequestDelete(orderId) {
+    setPendingDeleteId(orderId);
+  }
+
+  function handleCancelDelete() {
+    setPendingDeleteId(null);
+  }
+
+  function handleConfirmDelete() {
+    if (!pendingDeleteId) {
+      return;
+    }
+
+    deleteMutation.mutate(pendingDeleteId);
   }
 
   function updateField(event) {
@@ -183,7 +205,7 @@ export default function OrdersPage() {
           editingOrderId={editingOrderId}
           onCreate={handleOpenCreate}
           onEdit={handleEdit}
-          onDelete={(id) => deleteMutation.mutate(id)}
+          onDelete={handleRequestDelete}
         />
       </div>
 
@@ -199,6 +221,16 @@ export default function OrdersPage() {
         onFieldChange={updateField}
         onUnitSelect={handleUnitSelect}
         onSubmit={handleSubmit}
+      />
+
+      <ConfirmDialog
+        isOpen={pendingDeleteId !== null}
+        title="Delete Purchase Record"
+        message="This action cannot be undone. Are you sure you want to delete this purchase record?"
+        confirmLabel="Delete"
+        isConfirming={deleteMutation.isPending}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
       />
     </>
   );

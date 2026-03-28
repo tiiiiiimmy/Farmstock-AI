@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from backend.database import get_db_connection
+from backend.database import get_db_connection, seed_demo_farm
 from backend.auth import hash_password, verify_password, create_access_token, get_current_user
 from backend.models import UserCreate, UserLogin, TokenResponse, UserOut
 
@@ -25,40 +25,6 @@ def _make_user_out(row) -> UserOut:
         created_at=row["created_at"],
     )
 
-
-def _seed_demo_orders(conn, farm_id: str):
-    """Seed 6 months of demo purchase history so AI has data immediately."""
-    import random
-    from datetime import date
-    today = date.today()
-
-    demo_products = [
-        ("Ivomec Plus Drench 2.5L", "veterinary", 2, "units", 89.50, 45),
-        ("Dairy Pellets 20kg", "feed", 50, "units", 18.50, 14),
-        ("Superphosphate", "fertiliser", 5, "tonnes", 395.00, 90),
-        ("Palm Kernel Extract", "feed", 2, "tonnes", 320.00, 30),
-        ("Zinc Oxide Supplement", "veterinary", 10, "units", 24.00, 60),
-        ("Ryegrass Seed 20kg", "fertiliser", 20, "units", 45.00, 180),
-    ]
-
-    for product_name, category, qty, unit, unit_price, freq in demo_products:
-        num_orders = max(1, 180 // freq)
-        for i in range(num_orders):
-            days_ago = i * freq + random.randint(-5, 5)
-            if days_ago < 0:
-                days_ago = 0
-            order_date = (today - timedelta(days=days_ago)).isoformat()
-            variation = random.uniform(0.9, 1.1)
-            order_qty = round(qty * variation, 1)
-            order_price = round(unit_price * variation, 2)
-            conn.execute(
-                """INSERT INTO orders (id, farm_id, date, product_name, category,
-                   quantity, unit, unit_price, total_price, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
-                (str(uuid.uuid4()), farm_id, order_date, product_name, category,
-                 order_qty, unit, order_price, round(order_qty * order_price, 2))
-            )
-    conn.commit()
 
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
@@ -94,7 +60,7 @@ def register(body: UserCreate):
         conn.commit()
 
         # Seed demo purchase history so AI has data immediately
-        _seed_demo_orders(conn, farm_id)
+        seed_demo_farm(conn, farm_id, user_id)
 
         user_row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
         token = create_access_token({"sub": user_id, "email": body.email.lower()})

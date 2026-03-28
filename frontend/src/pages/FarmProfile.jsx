@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { Link } from 'react-router-dom';
 import { api } from "../api/client";
+import { useAuth } from '../context/AuthContext';
 
 export default function FarmProfilePage() {
   const queryClient = useQueryClient();
@@ -20,6 +22,13 @@ export default function FarmProfilePage() {
   const [draft, setDraft] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
+
+  const { isTrialing, trialDaysLeft } = useAuth()
+  const subStatusQuery = useQuery({
+    queryKey: ['subscription'],
+    queryFn: () => api.getSubscriptionStatus(),
+  })
+  const subStatus = subStatusQuery.data
 
   useEffect(() => {
     if (farmQuery.data) {
@@ -100,6 +109,27 @@ export default function FarmProfilePage() {
       <section className="panel">
         <div className="panel-header">
           <h3>Farm Profile</h3>
+        </div>
+
+        <div style={{ marginBottom: '1.5rem', padding: '1rem', background: isTrialing ? '#fefce8' : '#f0fdf4', borderRadius: '8px', border: `1px solid ${isTrialing ? '#fde68a' : '#bbf7d0'}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <span style={{ fontWeight: 600, color: isTrialing ? '#92400e' : '#166534', fontSize: '0.875rem' }}>
+                {subStatus?.status === 'active' ? '✓ Active Subscription'
+                  : subStatus?.status === 'trialing' ? `Free Trial — ${trialDaysLeft} days remaining`
+                  : subStatus ? 'Trial Expired'
+                  : 'Loading...'}
+              </span>
+              {subStatus?.status === 'active' && (
+                <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#166534' }}>All features unlocked</p>
+              )}
+            </div>
+            {subStatus && subStatus.status !== 'active' && (
+              <Link to="/pricing" style={{ background: '#15803d', color: 'white', padding: '6px 14px', borderRadius: '6px', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
+                Upgrade →
+              </Link>
+            )}
+          </div>
         </div>
 
         <form className="form-grid" onSubmit={handleSubmit}>

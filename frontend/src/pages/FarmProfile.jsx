@@ -4,9 +4,18 @@ import { api } from "../api/client";
 
 export default function FarmProfilePage() {
   const queryClient = useQueryClient();
+
+  // Resolve the user's farm ID via the /api/farms list endpoint
+  const farmsQuery = useQuery({
+    queryKey: ["farms"],
+    queryFn: () => api.getFarms()
+  });
+  const farmId = farmsQuery.data?.[0]?.id;
+
   const farmQuery = useQuery({
-    queryKey: ["farm"],
-    queryFn: () => api.getFarm("farm-001")
+    queryKey: ["farm", farmId],
+    queryFn: () => api.getFarm(farmId),
+    enabled: !!farmId
   });
   const [draft, setDraft] = useState(null);
   const [errors, setErrors] = useState({});
@@ -19,7 +28,7 @@ export default function FarmProfilePage() {
   }, [farmQuery.data]);
 
   const updateMutation = useMutation({
-    mutationFn: (payload) => api.updateFarm("farm-001", payload),
+    mutationFn: (payload) => api.updateFarm(farmId, payload),
     onSuccess: () => {
       setSubmitError("");
       setErrors({});

@@ -3,7 +3,7 @@ Pydantic v2 models for all FarmStock AI entities.
 """
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, EmailStr
 
 VALID_CATEGORIES = {"feed", "fertiliser", "veterinary", "chemical", "equipment"}
 VALID_FARM_TYPES = {"dairy", "beef", "sheep", "mixed"}
@@ -212,3 +212,31 @@ class ChatMessage(BaseModel):
     farm_id: str
     message: str
     conversation_history: Optional[List[dict]] = []
+
+
+# ── Auth & User models ──────────────────────────────────────────────────────
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+    full_name: str = Field(min_length=1, max_length=120)
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserOut(BaseModel):
+    id: str
+    email: str
+    full_name: Optional[str]
+    subscription_status: str
+    trial_ends_at: str
+    created_at: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut

@@ -68,7 +68,9 @@ export const api = {
   createCheckoutSession: (plan) => request("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan }) }),
   getSuppliers: (farmId) => request(`/api/farm/${farmId}/suppliers`),
   createSupplier: (farmId, data) => request(`/api/farm/${farmId}/suppliers`, { method: "POST", body: JSON.stringify(data) }),
+  updateSupplier: (farmId, supplierId, data) => request(`/api/farm/${farmId}/suppliers/${supplierId}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteSupplier: (farmId, supplierId) => request(`/api/farm/${farmId}/suppliers/${supplierId}`, { method: "DELETE" }),
+  setSupplierProducts: (farmId, supplierId, productIds) => request(`/api/farm/${farmId}/suppliers/${supplierId}/products`, { method: "PUT", body: JSON.stringify({ product_ids: productIds }) }),
   draftOrderEmail: (payload) => request("/api/draft-order-email", { method: "POST", body: JSON.stringify(payload) }),
   sendSupplierEmail: (payload) => request("/api/send-supplier-email", { method: "POST", body: JSON.stringify(payload) }),
 }

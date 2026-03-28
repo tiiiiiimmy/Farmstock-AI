@@ -97,6 +97,37 @@ def send_order_email(order_data: dict, supplier: dict, farm: dict) -> bool:
         return False
 
 
+def send_custom_order_email(
+    to_email: str,
+    subject: str,
+    body_text: str,
+    from_name: str = "FarmStock AI",
+    reply_to: str | None = None,
+) -> bool:
+    """Send a custom plain-text order email to any recipient."""
+    if not _is_configured():
+        print(f"[Email] SMTP not configured. Would send to {to_email}: {subject}")
+        return False
+    try:
+        msg = MIMEMultipart()
+        msg["Subject"] = subject
+        msg["From"] = f"{from_name} <{SMTP_USER}>"
+        msg["To"] = to_email
+        if reply_to:
+            msg["Reply-To"] = reply_to
+        msg.attach(MIMEText(body_text, "plain"))
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.sendmail(SMTP_USER, [to_email], msg.as_string())
+        print(f"[Email] Custom order email sent to {to_email}")
+        return True
+    except Exception as e:
+        print(f"[Email] Failed to send custom order email: {e}")
+        return False
+
+
 def send_alert_email(to_email: str, subject: str, body: str) -> bool:
     """Send a plain-text alert email to the farmer."""
     if not _is_configured():

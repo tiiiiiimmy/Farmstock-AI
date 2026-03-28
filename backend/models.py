@@ -209,7 +209,7 @@ class PlaceOrderRequest(BaseModel):
 
 
 class ChatMessage(BaseModel):
-    farm_id: str
+    farm_id: Optional[str] = None  # Deprecated: farm resolved from JWT
     message: str
     conversation_history: Optional[List[dict]] = []
 

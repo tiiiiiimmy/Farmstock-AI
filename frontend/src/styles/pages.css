@@ -348,6 +348,80 @@
   }
 }
 
+/* ─── Farm Profile ────────────────────────────────────────── */
+
+.sub-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  border-radius: var(--r-md);
+  font-size: 0.825rem;
+  border: 1px solid transparent;
+}
+
+.sub-banner-active {
+  background: var(--brand-light);
+  border-color: rgba(20, 92, 51, 0.15);
+  color: var(--brand);
+}
+
+.sub-banner-trial {
+  background: var(--amber-soft);
+  border-color: rgba(184, 109, 10, 0.18);
+  color: var(--amber);
+}
+
+.sub-banner-label {
+  font-weight: 500;
+}
+
+.sub-banner-cta {
+  color: var(--brand);
+  font-weight: 600;
+  font-size: 0.825rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.sub-banner-cta:hover {
+  text-decoration: underline;
+}
+
+.profile-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.profile-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.profile-row:last-of-type {
+  border-bottom: none;
+}
+
+.profile-row-label {
+  color: var(--ink-2);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.profile-row-value {
+  color: var(--ink);
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
+}
+
 /* ── Tablet ── */
 @media (min-width: 769px) and (max-width: 1100px) {
   .metrics-grid {

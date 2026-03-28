@@ -1,22 +1,24 @@
 """
 AI-powered purchase recommendation endpoints.
 """
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends
 from ..database import get_db
 from ..ai.predictor import get_all_predictions
 from ..ai.recommender import get_recommendations
+from ..auth import get_user_farm
 
 router = APIRouter()
 
 
 @router.get("/recommendations")
-def get_purchase_recommendations(farm_id: str = Query(..., description="Farm ID")):
+def get_purchase_recommendations(farm: dict = Depends(get_user_farm)):
     """
     Get top 5 AI-generated purchase recommendations for a farm.
 
     Combines depletion predictions, seasonal context, and spend history
     to surface the most actionable reorder suggestions.
     """
+    farm_id = farm["id"]
     conn = get_db()
     try:
         farm_row = conn.execute("SELECT * FROM farms WHERE id = ?", (farm_id,)).fetchone()

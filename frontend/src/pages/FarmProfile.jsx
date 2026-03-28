@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import { useAuth } from "../context/AuthContext";
+import SupplierModal from "../components/SupplierModal";
 
 /* ── Subscription banner ──────────────────────────────────── */
 
@@ -120,87 +121,7 @@ function EditProfileModal({ draft, errors, submitError, onChange, onSubmit, onCl
   );
 }
 
-/* ── Add supplier modal ───────────────────────────────────── */
-
-const EMPTY_SUPPLIER = { name: "", contact_name: "", contact_email: "", categories: "" };
-
-function AddSupplierModal({ onClose, onSave, saving, error }) {
-  const [form, setForm] = useState(EMPTY_SUPPLIER);
-  const [fieldErrors, setFieldErrors] = useState({});
-  const set = (e) => {
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
-    setFieldErrors((fe) => ({ ...fe, [e.target.name]: "" }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const errs = {};
-    if (!form.name.trim()) errs.name = "Supplier name is required";
-    if (!form.contact_email.trim()) errs.contact_email = "Contact email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contact_email.trim())) errs.contact_email = "Enter a valid email address";
-    if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
-    onSave({
-      name: form.name.trim(),
-      contact_name: form.contact_name.trim() || null,
-      contact_email: form.contact_email.trim(),
-      categories: form.categories
-        ? form.categories.split(",").map((c) => c.trim()).filter(Boolean)
-        : [],
-    });
-  };
-
-  return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-dialog">
-        <div className="modal-header">
-          <div>
-            <p className="modal-eyebrow field-label">Preferred Suppliers</p>
-            <h3>Add supplier</h3>
-          </div>
-          <button type="button" className="secondary-button" onClick={onClose}
-            style={{ padding: 0, width: "32px", height: "32px", borderRadius: "999px", fontSize: "1.1rem", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            ×
-          </button>
-        </div>
-
-        <form className="form-grid" onSubmit={handleSubmit}>
-          <label className="field-group">
-            <span className="field-label">Supplier name <span style={{ color: "var(--red)" }}>*</span></span>
-            <input name="name" value={form.name} onChange={set} placeholder="e.g. AgriSupply NZ" autoFocus />
-            {fieldErrors.name && <span className="field-error">{fieldErrors.name}</span>}
-          </label>
-          <label className="field-group">
-            <span className="field-label">Contact name <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></span>
-            <input name="contact_name" value={form.contact_name} onChange={set} placeholder="e.g. Jane Smith" />
-          </label>
-          <label className="field-group">
-            <span className="field-label">Contact email <span style={{ color: "var(--red)" }}>*</span></span>
-            <input name="contact_email" type="email" value={form.contact_email} onChange={set} placeholder="jane@supplier.co.nz" />
-            {fieldErrors.contact_email && <span className="field-error">{fieldErrors.contact_email}</span>}
-          </label>
-          <label className="field-group">
-            <span className="field-label">Categories <span className="muted" style={{ fontWeight: 400 }}>(comma-separated)</span></span>
-            <input name="categories" value={form.categories} onChange={set} placeholder="e.g. Feed, Supplements, Dairy" />
-          </label>
-          {error && <p className="form-error-banner">{error}</p>}
-          <div className="form-actions">
-            <button type="submit" disabled={saving}>
-              {saving ? "Adding…" : "Add supplier"}
-            </button>
-            <button
-              type="button"
-              className="secondary-button mobile-modal-cancel"
-              onClick={onClose}
-              disabled={saving}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
+/* ── Add / Edit supplier modal is now SupplierModal component ── */
 
 /* ── Main page ────────────────────────────────────────────── */
 
@@ -223,6 +144,11 @@ export default function FarmProfilePage() {
     enabled: !!farmId,
   });
 
+  const productsQuery = useQuery({
+    queryKey: queryKeys.products(),
+    queryFn: api.getProducts,
+  });
+
   const subStatusQuery = useQuery({
     queryKey: queryKeys.subscription(),
     queryFn: () => api.getSubscriptionStatus(),
@@ -233,7 +159,8 @@ export default function FarmProfilePage() {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
 
-  const [showAddSupplier, setShowAddSupplier] = useState(false);
+  // null = closed, false = add mode, supplier object = edit mode
+  const [supplierModal, setSupplierModal] = useState(null);
   const [supplierError, setSupplierError] = useState("");
 
   useEffect(() => {
@@ -254,13 +181,32 @@ export default function FarmProfilePage() {
 
   /* supplier mutations */
   const createSupplierMutation = useMutation({
-    mutationFn: (data) => api.createSupplier(farmId, data),
+    mutationFn: async ({ product_ids, ...data }) => {
+      const supplier = await api.createSupplier(farmId, data);
+      if (product_ids?.length) {
+        await api.setSupplierProducts(farmId, supplier.id, product_ids);
+      }
+      return supplier;
+    },
     onSuccess: () => {
-      setShowAddSupplier(false);
+      setSupplierModal(null);
       setSupplierError("");
       queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(farmId) });
     },
     onError: (err) => setSupplierError(err.message || "Failed to add supplier"),
+  });
+
+  const updateSupplierMutation = useMutation({
+    mutationFn: async ({ id, product_ids, ...data }) => {
+      await api.updateSupplier(farmId, id, data);
+      await api.setSupplierProducts(farmId, id, product_ids || []);
+    },
+    onSuccess: () => {
+      setSupplierModal(null);
+      setSupplierError("");
+      queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(farmId) });
+    },
+    onError: (err) => setSupplierError(err.message || "Failed to update supplier"),
   });
 
   const deleteSupplierMutation = useMutation({
@@ -314,6 +260,7 @@ export default function FarmProfilePage() {
   }
 
   const suppliers = suppliersQuery.data || [];
+  const products = productsQuery.data || [];
 
   return (
     <div className="page-grid two-column">
@@ -347,7 +294,7 @@ export default function FarmProfilePage() {
             type="button"
             className="secondary-button"
             style={{ fontSize: "0.825rem", padding: "0.35rem 0.85rem" }}
-            onClick={() => { setShowAddSupplier(true); setSupplierError(""); }}
+            onClick={() => { setSupplierModal(false); setSupplierError(""); }}
           >
             + Add
           </button>
@@ -363,15 +310,25 @@ export default function FarmProfilePage() {
               <article key={s.id} className="supplier-card">
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
                   <h4>{s.name}</h4>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    style={{ fontSize: "0.8rem", flexShrink: 0 }}
-                    onClick={() => deleteSupplierMutation.mutate(s.id)}
-                    disabled={deleteSupplierMutation.isPending}
-                  >
-                    Remove
-                  </button>
+                  <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      style={{ fontSize: "0.8rem" }}
+                      onClick={() => { setSupplierModal(s); setSupplierError(""); }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost-button"
+                      style={{ fontSize: "0.8rem", color: "var(--red)" }}
+                      onClick={() => deleteSupplierMutation.mutate(s.id)}
+                      disabled={deleteSupplierMutation.isPending}
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
                 {s.contact_name && <p className="muted" style={{ fontSize: "0.85rem", margin: "0.2rem 0 0" }}>{s.contact_name}</p>}
                 {s.contact_email && <p className="muted" style={{ fontSize: "0.85rem", margin: "0.15rem 0 0" }}>{s.contact_email}</p>}
@@ -381,6 +338,11 @@ export default function FarmProfilePage() {
                       <span key={c} className="pill pill-green" style={{ fontSize: "0.72rem" }}>{c}</span>
                     ))}
                   </div>
+                )}
+                {(s.product_ids || []).length > 0 && (
+                  <p className="muted" style={{ fontSize: "0.8rem", margin: "0.4rem 0 0" }}>
+                    {s.product_ids.length} product{s.product_ids.length !== 1 ? "s" : ""} linked
+                  </p>
                 )}
               </article>
             ))}
@@ -401,13 +363,22 @@ export default function FarmProfilePage() {
         />
       )}
 
-      {/* ── Add supplier modal ── */}
-      {showAddSupplier && (
-        <AddSupplierModal
-          onClose={() => setShowAddSupplier(false)}
-          onSave={(data) => createSupplierMutation.mutate(data)}
-          saving={createSupplierMutation.isPending}
+      {/* ── Add / Edit supplier modal ── */}
+      {supplierModal !== null && (
+        <SupplierModal
+          supplier={supplierModal || null}
+          products={products}
+          allSuppliers={suppliers}
+          saving={createSupplierMutation.isPending || updateSupplierMutation.isPending}
           error={supplierError}
+          onClose={() => { setSupplierModal(null); setSupplierError(""); }}
+          onSave={(data) => {
+            if (supplierModal && supplierModal.id) {
+              updateSupplierMutation.mutate({ id: supplierModal.id, ...data });
+            } else {
+              createSupplierMutation.mutate(data);
+            }
+          }}
         />
       )}
     </div>

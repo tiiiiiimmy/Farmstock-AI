@@ -10,6 +10,7 @@ export default function OrderFormModal({
   submitError,
   unitMode,
   isSubmitting,
+  suppliers,
   onClose,
   onFieldChange,
   onUnitSelect,
@@ -141,13 +142,22 @@ export default function OrderFormModal({
             {errors.unit_price ? <span className="field-error">{errors.unit_price}</span> : null}
           </label>
           <label className="field-group">
-            <span className="field-label">Supplier ID</span>
-            <input
-              name="supplier_id"
-              placeholder="Supplier ID"
-              value={draft.supplier_id}
-              onChange={onFieldChange}
-            />
+            <span className="field-label">Supplier <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></span>
+            {suppliers && suppliers.length > 0 ? (
+              <select name="supplier_id" value={draft.supplier_id || ""} onChange={onFieldChange}>
+                <option value="">— None —</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                name="supplier_id"
+                placeholder="Supplier name or ID"
+                value={draft.supplier_id}
+                onChange={onFieldChange}
+              />
+            )}
             {errors.supplier_id ? <span className="field-error">{errors.supplier_id}</span> : null}
           </label>
           <label className="field-group">

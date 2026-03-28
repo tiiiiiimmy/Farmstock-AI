@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from ..database import get_db
-from ..models import Farm, FarmUpdate, Supplier, SupplierCreate, SupplierUpdate
+from ..models import Farm, FarmUpdate, Supplier, SupplierCreate, SupplierUpdate, SupplierProductsRequest
 from ..auth import get_current_user, get_user_farm
 
 router = APIRouter()
@@ -92,7 +92,7 @@ def update_farm(farm_id: str, data: FarmUpdate, farm: dict = Depends(get_user_fa
 
 @router.get("/farm/{farm_id}/suppliers", response_model=list)
 def list_suppliers(farm_id: str, farm: dict = Depends(get_user_farm)):
-    """List all suppliers for a farm."""
+    """List all suppliers for a farm, each with their associated product_ids."""
     if farm["id"] != farm_id:
         raise HTTPException(status_code=403, detail="Access forbidden")
     conn = get_db()
@@ -100,7 +100,19 @@ def list_suppliers(farm_id: str, farm: dict = Depends(get_user_farm)):
         rows = conn.execute(
             "SELECT * FROM suppliers WHERE farm_id = ?", (farm_id,)
         ).fetchall()
-        return [_row_to_supplier(r) for r in rows]
+        suppliers = [_row_to_supplier(r) for r in rows]
+
+        # Attach product_ids from product_suppliers table
+        ps_rows = conn.execute(
+            "SELECT supplier_id, product_id FROM product_suppliers WHERE farm_id = ?", (farm_id,)
+        ).fetchall()
+        product_map: dict[str, list[str]] = {}
+        for ps in ps_rows:
+            product_map.setdefault(ps["supplier_id"], []).append(ps["product_id"])
+        for s in suppliers:
+            s["product_ids"] = product_map.get(s["id"], [])
+
+        return suppliers
     finally:
         conn.close()
 
@@ -159,6 +171,38 @@ def update_supplier(farm_id: str, supplier_id: str, data: SupplierUpdate, farm: 
 
         updated = conn.execute("SELECT * FROM suppliers WHERE id = ?", (supplier_id,)).fetchone()
         return Supplier(**_row_to_supplier(updated))
+    finally:
+        conn.close()
+
+
+@router.put("/farm/{farm_id}/suppliers/{supplier_id}/products", status_code=200)
+def set_supplier_products(
+    farm_id: str, supplier_id: str, req: SupplierProductsRequest, farm: dict = Depends(get_user_farm)
+):
+    """Replace the product associations for a supplier (full replace)."""
+    if farm["id"] != farm_id:
+        raise HTTPException(status_code=403, detail="Access forbidden")
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT id FROM suppliers WHERE id = ? AND farm_id = ?", (supplier_id, farm_id)
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Supplier not found")
+
+        now = datetime.utcnow().isoformat()
+        conn.execute(
+            "DELETE FROM product_suppliers WHERE farm_id = ? AND supplier_id = ?",
+            (farm_id, supplier_id),
+        )
+        for product_id in req.product_ids:
+            conn.execute(
+                """INSERT OR IGNORE INTO product_suppliers (id, farm_id, supplier_id, product_id, created_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (str(uuid.uuid4()), farm_id, supplier_id, product_id, now),
+            )
+        conn.commit()
+        return {"product_ids": req.product_ids}
     finally:
         conn.close()
 

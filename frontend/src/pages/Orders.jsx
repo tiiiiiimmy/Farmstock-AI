@@ -2,9 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
+import OrderFormModal from "../components/OrderFormModal";
 import OrderTable from "../components/OrderTable";
-
-const unitOptions = ["kg", "L", "tonnes", "units", "mL", "Custom..."];
 
 const emptyOrder = {
   date: new Date().toISOString().slice(0, 10),
@@ -20,6 +19,7 @@ const emptyOrder = {
 
 export default function OrdersPage() {
   const queryClient = useQueryClient();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [draft, setDraft] = useState(emptyOrder);
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [unitMode, setUnitMode] = useState("preset");
@@ -33,11 +33,7 @@ export default function OrdersPage() {
   const createMutation = useMutation({
     mutationFn: (payload) => api.createOrder(payload),
     onSuccess: () => {
-      setDraft(emptyOrder);
-      setEditingOrderId(null);
-      setUnitMode("preset");
-      setErrors({});
-      setSubmitError("");
+      handleCloseModal();
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all() });
     },
     onError: (error) => {
@@ -48,11 +44,7 @@ export default function OrdersPage() {
   const updateMutation = useMutation({
     mutationFn: ({ orderId, payload }) => api.updateOrder(orderId, payload),
     onSuccess: () => {
-      setDraft(emptyOrder);
-      setEditingOrderId(null);
-      setUnitMode("preset");
-      setErrors({});
-      setSubmitError("");
+      handleCloseModal();
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all() });
     },
     onError: (error) => {
@@ -64,13 +56,29 @@ export default function OrdersPage() {
     mutationFn: api.deleteOrder,
     onSuccess: () => {
       if (editingOrderId) {
-        setDraft(emptyOrder);
-        setEditingOrderId(null);
-        setUnitMode("preset");
+        handleCloseModal();
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.orders.all() });
     }
   });
+
+  function resetFormState() {
+    setDraft(emptyOrder);
+    setEditingOrderId(null);
+    setUnitMode("preset");
+    setErrors({});
+    setSubmitError("");
+  }
+
+  function handleOpenCreate() {
+    resetFormState();
+    setIsModalOpen(true);
+  }
+
+  function handleCloseModal() {
+    setIsModalOpen(false);
+    resetFormState();
+  }
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -147,7 +155,8 @@ export default function OrdersPage() {
   }
 
   function handleEdit(order) {
-    const isPresetUnit = unitOptions.includes(order.unit);
+    const presetUnits = ["kg", "L", "tonnes", "units", "mL"];
+    const isPresetUnit = presetUnits.includes(order.unit);
     setUnitMode(isPresetUnit ? "preset" : "custom");
     setEditingOrderId(order.id);
     setDraft({
@@ -161,121 +170,36 @@ export default function OrdersPage() {
       supplier_id: order.supplier_id || "",
       notes: order.notes || ""
     });
-  }
-
-  function handleCancelEdit() {
-    setEditingOrderId(null);
-    setUnitMode("preset");
     setErrors({});
     setSubmitError("");
-    setDraft(emptyOrder);
+    setIsModalOpen(true);
   }
 
   return (
-    <div className="page-grid two-column">
-      <section className="panel">
-        <div className="panel-header">
-          <h3>{editingOrderId ? "Edit Purchase Record" : "Log Manual Purchase"}</h3>
-        </div>
+    <>
+      <div className="page-grid">
+        <OrderTable
+          orders={ordersQuery.data || []}
+          editingOrderId={editingOrderId}
+          onCreate={handleOpenCreate}
+          onEdit={handleEdit}
+          onDelete={(id) => deleteMutation.mutate(id)}
+        />
+      </div>
 
-        <form className="form-grid" onSubmit={handleSubmit}>
-          <label className="field-group">
-            <span className="field-label">Purchase date</span>
-            <input name="date" type="date" value={draft.date} onChange={updateField} />
-            {errors.date ? <span className="field-error">{errors.date}</span> : null}
-          </label>
-          <label className="field-group">
-            <span className="field-label">Product name</span>
-            <input
-              name="product_name"
-              placeholder="Product name"
-              value={draft.product_name}
-              onChange={updateField}
-            />
-            {errors.product_name ? <span className="field-error">{errors.product_name}</span> : null}
-          </label>
-          <label className="field-group">
-            <span className="field-label">Category</span>
-            <select name="category" value={draft.category} onChange={updateField}>
-              <option value="feed">Feed</option>
-              <option value="fertiliser">Fertiliser</option>
-              <option value="veterinary">Veterinary</option>
-              <option value="chemical">Chemical</option>
-              <option value="equipment">Equipment</option>
-            </select>
-            {errors.category ? <span className="field-error">{errors.category}</span> : null}
-          </label>
-          <label className="field-group">
-            <span className="field-label">Quantity</span>
-            <input name="quantity" type="number" step="0.01" value={draft.quantity} onChange={updateField} />
-            {errors.quantity ? <span className="field-error">{errors.quantity}</span> : null}
-          </label>
-          <label className="field-group">
-            <span className="field-label">Unit</span>
-            <select
-              value={unitMode === "custom" ? "Custom..." : draft.unit}
-              onChange={handleUnitSelect}
-            >
-              {unitOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            {unitMode === "custom" ? (
-              <input
-                name="unit"
-                placeholder="Enter custom unit"
-                value={draft.unit}
-                onChange={updateField}
-              />
-            ) : null}
-            {errors.unit ? <span className="field-error">{errors.unit}</span> : null}
-          </label>
-          <label className="field-group">
-            <span className="field-label">Unit price</span>
-            <input name="unit_price" type="number" step="0.01" value={draft.unit_price} onChange={updateField} />
-            {errors.unit_price ? <span className="field-error">{errors.unit_price}</span> : null}
-          </label>
-          <label className="field-group">
-            <span className="field-label">Supplier ID</span>
-            <input
-              name="supplier_id"
-              placeholder="Supplier ID"
-              value={draft.supplier_id}
-              onChange={updateField}
-            />
-            {errors.supplier_id ? <span className="field-error">{errors.supplier_id}</span> : null}
-          </label>
-          <label className="field-group">
-            <span className="field-label">Notes</span>
-            <textarea name="notes" placeholder="Notes" value={draft.notes} onChange={updateField} rows={3} />
-            {errors.notes ? <span className="field-error">{errors.notes}</span> : null}
-          </label>
-          {submitError ? <p className="form-error-banner">{submitError}</p> : null}
-          <div className="form-actions">
-            <button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-              {editingOrderId ? "Save changes" : "Create order"}
-            </button>
-            {editingOrderId ? (
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={handleCancelEdit}
-              >
-                Cancel
-              </button>
-            ) : null}
-          </div>
-        </form>
-      </section>
-
-      <OrderTable
-        orders={ordersQuery.data || []}
+      <OrderFormModal
+        isOpen={isModalOpen}
         editingOrderId={editingOrderId}
-        onEdit={handleEdit}
-        onDelete={(id) => deleteMutation.mutate(id)}
+        draft={draft}
+        errors={errors}
+        submitError={submitError}
+        unitMode={unitMode}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
+        onClose={handleCloseModal}
+        onFieldChange={updateField}
+        onUnitSelect={handleUnitSelect}
+        onSubmit={handleSubmit}
       />
-    </div>
+    </>
   );
 }

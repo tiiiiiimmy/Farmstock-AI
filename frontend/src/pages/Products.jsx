@@ -52,7 +52,6 @@ export default function ProductsPage() {
               </div>
               <h4>{product.name}</h4>
               <p>{product.description}</p>
-              <p className="muted">Typical unit: {product.typical_unit}</p>
               <p className="muted">Storage: {product.storage_requirements}</p>
               <button type="button" onClick={() => orderMutation.mutate(product)}>
                 Order now

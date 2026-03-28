@@ -93,6 +93,10 @@ class SupplierUpdate(BaseModel):
     categories: Optional[List[str]] = None
 
 
+class SupplierProductsRequest(BaseModel):
+    product_ids: List[str]
+
+
 class Order(BaseModel):
     id: str
     farm_id: str

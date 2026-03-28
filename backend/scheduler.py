@@ -105,11 +105,41 @@ async def _monthly_summary():
         conn.close()
 
 
+async def _check_weather():
+    """Daily job: check weather for linked farms and alert if hazardous conditions."""
+    from backend.database import get_db_connection
+    from backend.telegram.sender import send_message
+    from backend.weather import get_farm_weather_alerts
+
+    conn = get_db_connection()
+    try:
+        users = conn.execute(
+            "SELECT id, telegram_chat_id FROM users WHERE telegram_chat_id IS NOT NULL"
+        ).fetchall()
+        for user in users:
+            # Single farm per user — multi-farm support is a future enhancement
+            farm = conn.execute(
+                "SELECT * FROM farms WHERE user_id = ? LIMIT 1", (user["id"],)
+            ).fetchone()
+            if not farm or not farm["region"]:
+                continue
+            alerts = await get_farm_weather_alerts(farm["region"])
+            high_alerts = [a for a in alerts if a["severity"] == "high"]
+            if high_alerts:
+                lines = [f"⛈️ *Weather Alert — {farm['region']}*\n"]
+                for a in high_alerts[:2]:
+                    lines.append(f"• {a['message']}")
+                await send_message(user["telegram_chat_id"], "\n".join(lines))
+    finally:
+        conn.close()
+
+
 def start_scheduler():
     scheduler.add_job(_check_low_stock, CronTrigger(hour=7, minute=0), id="low_stock_check")
     scheduler.add_job(_monthly_summary, CronTrigger(day=1, hour=8, minute=0), id="monthly_summary")
+    scheduler.add_job(_check_weather, CronTrigger(hour=6, minute=30), id="weather_check")
     scheduler.start()
-    print("[Scheduler] Started: low_stock_check (07:00 daily), monthly_summary (1st of month)")
+    print("[Scheduler] Started: low_stock_check (07:00 daily), monthly_summary (1st of month), weather_check (06:30 daily)")
 
 
 def stop_scheduler():

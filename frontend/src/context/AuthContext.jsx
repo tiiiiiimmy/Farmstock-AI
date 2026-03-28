@@ -1,6 +1,12 @@
 import { createContext, useContext, useState } from 'react'
+import { authApi } from '../api/client'
 
 const AuthContext = createContext(null)
+
+function clearLocalAuth() {
+  localStorage.removeItem('farmstock_token')
+  localStorage.removeItem('farmstock_user')
+}
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('farmstock_token'))
@@ -16,11 +22,13 @@ export function AuthProvider({ children }) {
     setUser(userData)
   }
 
-  const logout = () => {
-    localStorage.removeItem('farmstock_token')
-    localStorage.removeItem('farmstock_user')
+  const logout = async () => {
+    // Best-effort server notification — don't block on failure
+    try { await authApi.logout() } catch {}
+    clearLocalAuth()
     setToken(null)
     setUser(null)
+    window.location.href = '/login'
   }
 
   const isTrialing = user?.subscription_status === 'trialing'

@@ -44,6 +44,7 @@ export const authApi = {
   register: (data) => request('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
   login: (data) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   me: () => request('/api/auth/me'),
+  logout: () => request('/api/auth/logout', { method: 'POST' }),
 }
 
 export const api = {
@@ -65,4 +66,7 @@ export const api = {
   sendChat: (payload) => request("/api/chat", { method: "POST", body: JSON.stringify(payload) }),
   getSubscriptionStatus: () => request("/api/billing/status"),
   createCheckoutSession: (plan) => request("/api/billing/checkout", { method: "POST", body: JSON.stringify({ plan }) }),
+  getSuppliers: (farmId) => request(`/api/farm/${farmId}/suppliers`),
+  createSupplier: (farmId, data) => request(`/api/farm/${farmId}/suppliers`, { method: "POST", body: JSON.stringify(data) }),
+  deleteSupplier: (farmId, supplierId) => request(`/api/farm/${farmId}/suppliers/${supplierId}`, { method: "DELETE" }),
 }

@@ -13,6 +13,7 @@ load_dotenv()
 
 from .database import ensure_db_ready
 from .routers import farms, orders, products, predictions, recommendations, alerts, place_order, spending, chat
+from .routers import auth as auth_router_module
 from .whatsapp import webhook
 from .telegram import webhook as telegram_webhook
 
@@ -32,6 +33,7 @@ async def startup():
     ensure_db_ready()
 
 
+app.include_router(auth_router_module.router)
 app.include_router(farms.router, prefix="/api")
 app.include_router(orders.router, prefix="/api")
 app.include_router(products.router, prefix="/api")

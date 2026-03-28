@@ -1,5 +1,8 @@
 import os
-from anthropic import Anthropic
+try:
+    from anthropic import Anthropic
+except ImportError:
+    Anthropic = None
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
@@ -7,10 +10,10 @@ MAX_TOKENS = int(os.getenv("CLAUDE_MAX_TOKENS", "2048"))
 
 _client = None
 
-def _get_client() -> Anthropic:
+def _get_client():
     global _client
     if _client is None:
-        if not ANTHROPIC_API_KEY:
+        if not ANTHROPIC_API_KEY or Anthropic is None:
             return None
         _client = Anthropic(api_key=ANTHROPIC_API_KEY)
     return _client
@@ -117,3 +120,15 @@ def _fallback_response(message: str, farm_profile: dict, predictions: list, reco
         return "No urgent recommendations right now. All supplies appear well-stocked."
 
     return f"I'm FarmStock AI, your farm supply assistant. I can help with stock predictions, order recommendations, and spending analysis for {farm_name}. What would you like to know?"
+
+
+async def chat_with_ai(message: str, farm_context: dict, conversation_history: list) -> str:
+    """Async wrapper for chat.py compatibility — maps farm_context dict to generate_response args."""
+    return generate_response(
+        message=message,
+        farm_profile=farm_context.get("farm", {}),
+        recent_orders=farm_context.get("recent_orders", []),
+        predictions=farm_context.get("predictions", []),
+        recommendations=farm_context.get("recommendations", []),
+        conversation_history=conversation_history,
+    )

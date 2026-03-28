@@ -2,19 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../api/client";
 
-const NEW_SUPPLIER = "__new__";
-
 export default function OrderEmailModal({ product, suppliers, farmId, farmName, onClose, onSupplierCreated }) {
   const hasExisting = suppliers.length > 0;
 
-  // Supplier mode: pick existing or add new
-  const [supplierId, setSupplierId] = useState(hasExisting ? (suppliers[0]?.id || "") : NEW_SUPPLIER);
+  // "none" = not yet chosen, "existing" = selected from list, "new" = adding new
+  const [supplierMode, setSupplierMode] = useState(hasExisting ? "none" : "new");
+  const [supplierId, setSupplierId] = useState("");
 
   // New supplier fields
   const [newName, setNewName] = useState("");
   const [newContact, setNewContact] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newEmailError, setNewEmailError] = useState("");
+  const [newErrors, setNewErrors] = useState({});
 
   // Email draft
   const [toEmail, setToEmail] = useState("");
@@ -30,11 +29,9 @@ export default function OrderEmailModal({ product, suppliers, farmId, farmName, 
 
   const draftTriggeredFor = useRef(null);
 
-  const isNew = supplierId === NEW_SUPPLIER;
-  const selectedSupplier = !isNew ? (suppliers.find((s) => s.id === supplierId) || null) : null;
+  const isNew = supplierMode === "new";
+  const selectedSupplier = supplierMode === "existing" ? (suppliers.find((s) => s.id === supplierId) || null) : null;
 
-  // Derived: the actual email and supplier info used for drafting
-  const effectiveEmail = isNew ? newEmail : (selectedSupplier?.contact_email || "");
   const effectiveSupplierName = isNew ? newName : (selectedSupplier?.name || "");
   const effectiveContactName = isNew ? newContact : (selectedSupplier?.contact_name || "");
 
@@ -47,7 +44,7 @@ export default function OrderEmailModal({ product, suppliers, farmId, farmName, 
 
   // When existing supplier selection changes: sync toEmail, clear draft
   useEffect(() => {
-    if (isNew) return;
+    if (supplierMode !== "existing") return;
     const email = selectedSupplier?.contact_email || "";
     setToEmail(email);
     setSubject("");
@@ -55,14 +52,24 @@ export default function OrderEmailModal({ product, suppliers, farmId, farmName, 
     draftTriggeredFor.current = null;
   }, [supplierId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // When switching back to "existing" / "none" from "new"
+  function switchToExisting() {
+    setSupplierMode(supplierId ? "existing" : "none");
+    const email = suppliers.find((s) => s.id === supplierId)?.contact_email || "";
+    setToEmail(email);
+    setSubject("");
+    setBody("");
+    draftTriggeredFor.current = null;
+  }
+
   const draftMutation = useMutation({
-    mutationFn: ({ email, supplierName, contactName }) =>
+    mutationFn: () =>
       api.draftOrderEmail({
         product_name: product.name,
         quantity: Number(quantity),
         unit,
-        supplier_name: supplierName || "Supplier",
-        supplier_contact: contactName || null,
+        supplier_name: effectiveSupplierName || "Supplier",
+        supplier_contact: effectiveContactName || null,
       }),
     onSuccess: (data) => {
       setSubject(data.subject || "");
@@ -70,18 +77,22 @@ export default function OrderEmailModal({ product, suppliers, farmId, farmName, 
     },
   });
 
-  // Auto-draft when toEmail is set and we haven't drafted for it yet
+  // Auto-draft when toEmail is set and hasn't been drafted for yet
   useEffect(() => {
     if (!toEmail || draftTriggeredFor.current === toEmail) return;
     draftTriggeredFor.current = toEmail;
     setSubject("");
     setBody("");
-    draftMutation.mutate({
-      email: toEmail,
-      supplierName: effectiveSupplierName,
-      contactName: effectiveContactName,
-    });
+    draftMutation.mutate();
   }, [toEmail]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // For existing supplier without email: manual email input + generate button
+  function handleGenerateDraft() {
+    draftTriggeredFor.current = null;
+    setSubject("");
+    setBody("");
+    draftMutation.mutate();
+  }
 
   const createSupplierMutation = useMutation({
     mutationFn: (data) => api.createSupplier(farmId, data),
@@ -101,7 +112,6 @@ export default function OrderEmailModal({ product, suppliers, farmId, farmName, 
       }),
     onSuccess: () => {
       setSent(true);
-      // Save new supplier if one was entered
       if (isNew && newName.trim() && newEmail.trim()) {
         createSupplierMutation.mutate({
           name: newName.trim(),
@@ -112,34 +122,30 @@ export default function OrderEmailModal({ product, suppliers, farmId, farmName, 
     },
   });
 
+  // Commit new supplier email when field blurs (triggers auto-draft)
   function handleNewEmailBlur() {
-    if (!newEmail.trim()) return;
-    setToEmail(newEmail.trim());
-  }
-
-  function handleGenerateDraft() {
-    if (!toEmail.trim()) return;
-    draftTriggeredFor.current = null;
-    setSubject("");
-    setBody("");
-    draftMutation.mutate({
-      email: toEmail,
-      supplierName: effectiveSupplierName,
-      contactName: effectiveContactName,
-    });
+    const val = newEmail.trim();
+    if (val && toEmail !== val) {
+      setToEmail(val);
+    }
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (isNew && !newEmail.trim()) {
-      setNewEmailError("Contact email is required");
-      return;
+
+    if (isNew) {
+      const errs = {};
+      if (!newName.trim()) errs.name = "Supplier name is required";
+      if (!newEmail.trim()) errs.email = "Contact email is required";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail.trim())) errs.email = "Enter a valid email address";
+      if (Object.keys(errs).length) { setNewErrors(errs); return; }
     }
+
     if (!toEmail.trim() || !subject.trim() || !body.trim()) return;
     sendMutation.mutate();
   }
 
-  // Success screen
+  // ── Success screen ────────────────────────────────────────────
   if (sent) {
     return (
       <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -168,7 +174,7 @@ export default function OrderEmailModal({ product, suppliers, farmId, farmName, 
   }
 
   const showDraftArea = Boolean(toEmail) && !draftMutation.isPending;
-  const canSend = toEmail.trim() && subject.trim() && body.trim() && !sendMutation.isPending && !draftMutation.isPending;
+  const canSend = Boolean(toEmail.trim() && subject.trim() && body.trim() && !sendMutation.isPending && !draftMutation.isPending);
 
   return (
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -189,7 +195,7 @@ export default function OrderEmailModal({ product, suppliers, farmId, farmName, 
         </div>
 
         <form className="form-grid" onSubmit={handleSubmit}>
-          {/* Quantity + Unit */}
+          {/* ── Quantity + Unit ── */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
             <label className="field-group">
               <span className="field-label">Quantity</span>
@@ -207,57 +213,81 @@ export default function OrderEmailModal({ product, suppliers, farmId, farmName, 
             </label>
           </div>
 
-          {/* Supplier selector */}
-          <label className="field-group">
+          {/* ── Supplier selection ── */}
+          <div className="field-group">
             <span className="field-label">Supplier</span>
-            <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-              <option value={NEW_SUPPLIER}>+ Add new supplier</option>
-            </select>
-          </label>
 
-          {/* New supplier fields */}
-          {isNew && (
-            <>
-              <label className="field-group">
-                <span className="field-label">
-                  Supplier name <span style={{ color: "var(--red)" }}>*</span>
-                </span>
-                <input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. AgriSupply NZ"
-                  autoFocus={!hasExisting}
-                />
-              </label>
-              <label className="field-group">
-                <span className="field-label">Contact name <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></span>
+            {/* Existing supplier dropdown — visible when there are existing suppliers */}
+            {hasExisting && supplierMode !== "new" && (
+              <select
+                value={supplierId}
+                onChange={(e) => {
+                  setSupplierId(e.target.value);
+                  setSupplierMode(e.target.value ? "existing" : "none");
+                }}
+              >
+                <option value="">— Select a supplier —</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            )}
+
+            {/* Add new supplier button — shown below dropdown when not in "new" mode */}
+            {supplierMode !== "new" && (
+              <button
+                type="button"
+                className="ghost-button"
+                style={{ fontSize: "0.8rem", marginTop: "0.5rem", padding: "0.2rem 0" }}
+                onClick={() => { setSupplierMode("new"); setSupplierId(""); }}
+              >
+                ＋ Add new supplier
+              </button>
+            )}
+
+            {/* New supplier inline form */}
+            {supplierMode === "new" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", marginTop: "0.1rem" }}>
+                <div>
+                  <input
+                    value={newName}
+                    onChange={(e) => { setNewName(e.target.value); setNewErrors((n) => ({ ...n, name: "" })); }}
+                    placeholder="Supplier name *"
+                    autoFocus
+                  />
+                  {newErrors.name && <span className="field-error">{newErrors.name}</span>}
+                </div>
                 <input
                   value={newContact}
                   onChange={(e) => setNewContact(e.target.value)}
-                  placeholder="e.g. Jane Smith"
+                  placeholder="Contact name (optional)"
                 />
-              </label>
-              <label className="field-group">
-                <span className="field-label">
-                  Contact email <span style={{ color: "var(--red)" }}>*</span>
-                </span>
-                <input
-                  type="email"
-                  value={newEmail}
-                  onChange={(e) => { setNewEmail(e.target.value); setNewEmailError(""); }}
-                  onBlur={handleNewEmailBlur}
-                  placeholder="jane@supplier.co.nz"
-                />
-                {newEmailError && <span className="field-error">{newEmailError}</span>}
-              </label>
-            </>
-          )}
+                <div>
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => { setNewEmail(e.target.value); setNewErrors((n) => ({ ...n, email: "" })); }}
+                    onBlur={handleNewEmailBlur}
+                    placeholder="Contact email *"
+                  />
+                  {newErrors.email && <span className="field-error">{newErrors.email}</span>}
+                </div>
+                {hasExisting && (
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    style={{ fontSize: "0.8rem", padding: "0.2rem 0", alignSelf: "flex-start" }}
+                    onClick={switchToExisting}
+                  >
+                    ← Choose from existing suppliers
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
-          {/* Existing supplier without email on file */}
-          {!isNew && !selectedSupplier?.contact_email && (
+          {/* ── Existing supplier without email on file ── */}
+          {supplierMode === "existing" && selectedSupplier && !selectedSupplier?.contact_email && (
             <label className="field-group">
               <span className="field-label">
                 Contact email
@@ -286,12 +316,12 @@ export default function OrderEmailModal({ product, suppliers, farmId, farmName, 
             </label>
           )}
 
-          {/* Drafting indicator */}
+          {/* ── Drafting indicator ── */}
           {draftMutation.isPending && (
             <p className="muted" style={{ fontSize: "0.875rem", margin: 0 }}>AI is drafting the email…</p>
           )}
 
-          {/* Email draft fields */}
+          {/* ── Email draft fields ── */}
           {showDraftArea && (
             <>
               <label className="field-group">

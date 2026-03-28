@@ -4,8 +4,9 @@ Spending analytics endpoints: totals by category, monthly breakdown, YoY compari
 from datetime import datetime
 from typing import Optional
 from collections import defaultdict
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from ..database import get_db
+from ..auth import get_user_farm
 
 router = APIRouter()
 
@@ -36,7 +37,7 @@ def _period_filter_dates(period: str):
 
 @router.get("/spending")
 def get_spending(
-    farm_id: str = Query(..., description="Farm ID"),
+    farm: dict = Depends(get_user_farm),
     period: Optional[str] = Query(None, description="month | quarter | year (omit for all-time)"),
     category: Optional[str] = Query(None, description="Filter by category"),
 ):
@@ -47,6 +48,7 @@ def get_spending(
     - monthly_breakdown: [{year, month, total, by_category}]
     - yoy_comparison: current year vs prior year totals
     """
+    farm_id = farm["id"]
     conn = get_db()
     try:
         start_date, end_date = _period_filter_dates(period) if period else (None, None)

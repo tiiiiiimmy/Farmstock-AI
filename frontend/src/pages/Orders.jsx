@@ -14,7 +14,7 @@ const emptyOrder = {
   unit: "units",
   unit_price: 0,
   total_price: 0,
-  supplier_id: "sup-001",
+  supplier_id: "",
   notes: ""
 };
 
@@ -31,6 +31,15 @@ export default function OrdersPage() {
     queryKey: queryKeys.orders.all(),
     queryFn: api.getOrders
   });
+
+  const farmsQuery = useQuery({ queryKey: queryKeys.farms.all(), queryFn: api.getFarms });
+  const farmId = farmsQuery.data?.[0]?.id;
+  const suppliersQuery = useQuery({
+    queryKey: queryKeys.suppliers(farmId),
+    queryFn: () => api.getSuppliers(farmId),
+    enabled: !!farmId,
+  });
+  const suppliers = suppliersQuery.data || [];
 
   const createMutation = useMutation({
     mutationFn: (payload) => api.createOrder(payload),
@@ -217,6 +226,7 @@ export default function OrdersPage() {
         submitError={submitError}
         unitMode={unitMode}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+        suppliers={suppliers}
         onClose={handleCloseModal}
         onFieldChange={updateField}
         onUnitSelect={handleUnitSelect}

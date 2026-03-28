@@ -1,7 +1,18 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useLocation } from "react-router-dom";
 import { api } from "../api/client";
+
+const HINT_KEY = "farmstock_dashboard_visits";
+const HINT_MAX = 3;
+
+function getDashboardVisits() {
+  return parseInt(localStorage.getItem(HINT_KEY) || "0", 10);
+}
+function incrementDashboardVisits() {
+  localStorage.setItem(HINT_KEY, String(getDashboardVisits() + 1));
+}
 
 const STORAGE_KEY = "farmstock_chat_thread";
 const DEFAULT_THREAD = [
@@ -42,8 +53,11 @@ export default function FloatingChat() {
   const [message, setMessage] = useState("");
   const [thread, setThread] = useState(loadThread);
   const [isPending, startTransition] = useTransition();
+  const [showHint, setShowHint] = useState(false);
   const threadRef = useRef(null);
   const textareaRef = useRef(null);
+  const hintTimerRef = useRef(null);
+  const location = useLocation();
 
   // Persist thread
   useEffect(() => {
@@ -70,6 +84,22 @@ export default function FloatingChat() {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [open]);
+
+  // Show hint bubble on first 3 dashboard visits
+  useEffect(() => {
+    if (location.pathname !== "/dashboard") return;
+    const visits = getDashboardVisits();
+    if (visits >= HINT_MAX) return;
+    incrementDashboardVisits();
+    // Small delay so the page settles before the bubble appears
+    hintTimerRef.current = setTimeout(() => setShowHint(true), 1200);
+    // Auto-dismiss after 7 seconds
+    const dismissTimer = setTimeout(() => setShowHint(false), 8200);
+    return () => {
+      clearTimeout(hintTimerRef.current);
+      clearTimeout(dismissTimer);
+    };
+  }, [location.pathname]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -106,8 +136,30 @@ export default function FloatingChat() {
   const unread = !open && thread.length > 1 &&
     thread[thread.length - 1].role === "assistant";
 
+  function openChat() {
+    setShowHint(false);
+    setOpen((o) => !o);
+  }
+
   return (
     <>
+      {/* ── Onboarding hint bubble ── */}
+      {showHint && !open && (
+        <div className="fchat-hint" role="tooltip">
+          <p className="fchat-hint-text">
+            👋 I'm your AI farm assistant — ask me anything about your inventory, orders, spending, or farm operations.
+          </p>
+          <button
+            type="button"
+            className="fchat-hint-dismiss"
+            onClick={() => setShowHint(false)}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* ── Popup panel ── */}
       {open && (
         <div className="fchat-panel" role="dialog" aria-label="FarmStock AI chat">
@@ -193,7 +245,7 @@ export default function FloatingChat() {
       {/* ── FAB ── */}
       <button
         className={`fchat-fab ${open ? "fchat-fab-open" : ""}`}
-        onClick={() => setOpen((o) => !o)}
+        onClick={openChat}
         aria-label={open ? "Close chat" : "Open AI chat"}
       >
         {open ? <CloseIcon /> : <ChatIcon />}

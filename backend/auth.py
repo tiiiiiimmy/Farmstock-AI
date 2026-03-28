@@ -64,3 +64,38 @@ def get_user_farm(current_user: dict = Depends(get_current_user)) -> dict:
         return dict(farm)
     finally:
         conn.close()
+
+
+def require_active_subscription(current_user: dict = Depends(get_current_user)) -> dict:
+    """
+    FastAPI dependency — raises 402 if the user's trial has expired and
+    they have no active subscription.
+    """
+    from backend.database import get_db_connection
+    from datetime import datetime, timezone
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT subscription_status, trial_ends_at FROM users WHERE id = ?",
+            (current_user["sub"],),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+        status = row["subscription_status"]
+        if status == "trialing":
+            trial_ends = datetime.fromisoformat(row["trial_ends_at"].replace("Z", "+00:00"))
+            if datetime.now(timezone.utc) > trial_ends:
+                raise HTTPException(
+                    status_code=402,
+                    detail="Free trial has expired. Please subscribe to continue.",
+                    headers={"X-Subscribe-Url": "/pricing"},
+                )
+        elif status not in ("active",):
+            raise HTTPException(
+                status_code=402,
+                detail="An active subscription is required.",
+                headers={"X-Subscribe-Url": "/pricing"},
+            )
+        return current_user
+    finally:
+        conn.close()

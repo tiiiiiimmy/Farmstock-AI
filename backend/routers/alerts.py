@@ -4,9 +4,10 @@ Alert management endpoints.
 import uuid
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from ..database import get_db
 from ..models import Alert
+from ..auth import get_user_farm
 
 router = APIRouter()
 
@@ -46,10 +47,11 @@ def _row_to_alert(row) -> dict:
 
 @router.get("/alerts", response_model=list)
 def list_alerts(
-    farm_id: str = Query(..., description="Farm ID"),
+    farm: dict = Depends(get_user_farm),
     status: Optional[str] = Query(None, description="Filter by status: pending, sent, dismissed, actioned"),
 ):
     """List alerts for a farm, optionally filtered by status."""
+    farm_id = farm["id"]
     conn = get_db()
     try:
         if status:
@@ -95,9 +97,10 @@ def update_alert(alert_id: str, status: str = Query(..., description="New status
 @router.post("/trigger-alert/{alert_type}", response_model=Alert, status_code=201)
 def trigger_alert(
     alert_type: str,
-    farm_id: str = Query(..., description="Farm ID"),
+    farm: dict = Depends(get_user_farm),
 ):
     """Manually trigger an alert of a given type (for demo purposes)."""
+    farm_id = farm["id"]
     if alert_type not in ALERT_TEMPLATES:
         raise HTTPException(
             status_code=400,

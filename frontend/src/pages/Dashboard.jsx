@@ -1,16 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { queryKeys } from "../api/queryKeys";
 import AlertFeed from "../components/AlertFeed";
 import InventoryChart from "../components/InventoryChart";
 import MetricCard from "../components/MetricCard";
 
 export default function DashboardPage() {
   const predictionsQuery = useQuery({
-    queryKey: ["predictions"],
+    queryKey: queryKeys.predictions(),
     queryFn: () => api.getPredictions()
   });
   const alertsQuery = useQuery({
-    queryKey: ["alerts"],
+    queryKey: queryKeys.alerts(),
     queryFn: () => api.getAlerts()
   });
 

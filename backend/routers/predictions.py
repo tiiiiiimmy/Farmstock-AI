@@ -1,21 +1,23 @@
 """
 Supply depletion prediction endpoints.
 """
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends
 from ..database import get_db
 from ..ai.predictor import get_all_predictions
+from ..auth import get_user_farm
 
 router = APIRouter()
 
 
 @router.get("/predictions")
-def get_predictions(farm_id: str = Query(..., description="Farm ID")):
+def get_predictions(farm: dict = Depends(get_user_farm)):
     """
     Get depletion predictions for all tracked products on a farm.
 
     Analyzes order history to estimate when each product will run out,
     assigns urgency (red/amber/green), and provides recommended reorder dates.
     """
+    farm_id = farm["id"]
     conn = get_db()
     try:
         order_rows = conn.execute(

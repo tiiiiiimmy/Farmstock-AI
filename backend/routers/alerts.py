@@ -70,7 +70,7 @@ def list_alerts(
 
 
 @router.put("/alerts/{alert_id}", response_model=Alert)
-def update_alert(alert_id: str, status: str = Query(..., description="New status")):
+def update_alert(alert_id: str, status: str = Query(..., description="New status"), farm: dict = Depends(get_user_farm)):
     """Update an alert's status (pending, sent, dismissed, actioned)."""
     valid_statuses = {"pending", "sent", "dismissed", "actioned"}
     if status not in valid_statuses:
@@ -81,7 +81,7 @@ def update_alert(alert_id: str, status: str = Query(..., description="New status
 
     conn = get_db()
     try:
-        row = conn.execute("SELECT * FROM alerts WHERE id = ?", (alert_id,)).fetchone()
+        row = conn.execute("SELECT * FROM alerts WHERE id = ? AND farm_id = ?", (alert_id, farm["id"])).fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Alert not found")
 

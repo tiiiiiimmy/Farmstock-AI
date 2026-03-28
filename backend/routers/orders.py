@@ -4,9 +4,10 @@ Purchase order CRUD endpoints.
 import uuid
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from ..database import get_db
 from ..models import Order, OrderCreate, OrderUpdate
+from ..auth import get_user_farm
 
 router = APIRouter()
 
@@ -17,7 +18,7 @@ def _row_to_order(row) -> dict:
 
 @router.get("/orders", response_model=list)
 def list_orders(
-    farm_id: str = Query(..., description="Farm ID"),
+    farm: dict = Depends(get_user_farm),
     category: Optional[str] = Query(None),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
@@ -25,6 +26,7 @@ def list_orders(
     offset: int = Query(0, ge=0),
 ):
     """List orders with optional filters."""
+    farm_id = farm["id"]
     conn = get_db()
     try:
         query = "SELECT * FROM orders WHERE farm_id = ?"
@@ -50,12 +52,13 @@ def list_orders(
 
 
 @router.post("/orders", response_model=Order, status_code=201)
-def create_order(data: OrderCreate, farm_id: str = Query(...)):
+def create_order(data: OrderCreate, farm: dict = Depends(get_user_farm)):
     """Create a new order for a farm."""
+    farm_id = farm["id"]
     conn = get_db()
     try:
-        farm = conn.execute("SELECT id FROM farms WHERE id = ?", (farm_id,)).fetchone()
-        if not farm:
+        farm_row = conn.execute("SELECT id FROM farms WHERE id = ?", (farm_id,)).fetchone()
+        if not farm_row:
             raise HTTPException(status_code=404, detail="Farm not found")
 
         order_id = str(uuid.uuid4())
@@ -77,10 +80,14 @@ def create_order(data: OrderCreate, farm_id: str = Query(...)):
 
 
 @router.put("/orders/{order_id}", response_model=Order)
-def update_order(order_id: str, data: OrderUpdate):
+def update_order(order_id: str, data: OrderUpdate, farm: dict = Depends(get_user_farm)):
     """Update an existing order."""
     conn = get_db()
     try:
+        order_row = conn.execute("SELECT farm_id FROM orders WHERE id = ?", (order_id,)).fetchone()
+        if not order_row or order_row["farm_id"] != farm["id"]:
+            raise HTTPException(status_code=404, detail="Order not found")
+
         row = conn.execute("SELECT * FROM orders WHERE id = ?", (order_id,)).fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Order not found")
@@ -101,12 +108,12 @@ def update_order(order_id: str, data: OrderUpdate):
 
 
 @router.delete("/orders/{order_id}", status_code=204)
-def delete_order(order_id: str):
+def delete_order(order_id: str, farm: dict = Depends(get_user_farm)):
     """Delete an order."""
     conn = get_db()
     try:
-        row = conn.execute("SELECT id FROM orders WHERE id = ?", (order_id,)).fetchone()
-        if not row:
+        row = conn.execute("SELECT farm_id FROM orders WHERE id = ?", (order_id,)).fetchone()
+        if not row or row["farm_id"] != farm["id"]:
             raise HTTPException(status_code=404, detail="Order not found")
 
         conn.execute("DELETE FROM orders WHERE id = ?", (order_id,))

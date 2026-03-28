@@ -164,6 +164,18 @@ def init_db(conn=None):
             FOREIGN KEY (product_id) REFERENCES products(id)
         );
 
+        CREATE TABLE IF NOT EXISTS product_suppliers (
+            id TEXT PRIMARY KEY,
+            farm_id TEXT NOT NULL,
+            supplier_id TEXT NOT NULL,
+            product_id TEXT NOT NULL,
+            created_at TEXT,
+            UNIQUE(farm_id, supplier_id, product_id),
+            FOREIGN KEY(farm_id) REFERENCES farms(id) ON DELETE CASCADE,
+            FOREIGN KEY(supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE,
+            FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
+        );
+
         CREATE TABLE IF NOT EXISTS placed_orders (
             id TEXT PRIMARY KEY,
             farm_id TEXT NOT NULL,

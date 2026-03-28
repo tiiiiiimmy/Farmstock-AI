@@ -1,34 +1,38 @@
 import { useDeferredValue, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
+import OrderEmailModal from "../components/OrderEmailModal";
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
+  const [orderProduct, setOrderProduct] = useState(null);
+
   const productsQuery = useQuery({
     queryKey: queryKeys.products(),
-    queryFn: api.getProducts
+    queryFn: api.getProducts,
   });
 
-  const orderMutation = useMutation({
-    mutationFn: (product) =>
-      api.placeOrder({
-        supplier_id: "sup-001",
-        items: [
-          {
-            product_name: product.name,
-            quantity: 1,
-            unit: product.typical_unit,
-            unit_price: 0
-          }
-        ]
-      })
+  const farmsQuery = useQuery({
+    queryKey: queryKeys.farms.all(),
+    queryFn: api.getFarms,
+  });
+
+  const farmId = farmsQuery.data?.[0]?.id;
+  const farmName = farmsQuery.data?.[0]?.name || "Farm";
+
+  const suppliersQuery = useQuery({
+    queryKey: queryKeys.suppliers(farmId),
+    queryFn: () => api.getSuppliers(farmId),
+    enabled: !!farmId,
   });
 
   const products = (productsQuery.data || []).filter((product) =>
     product.name.toLowerCase().includes(deferredSearch.toLowerCase())
   );
+
+  const suppliers = suppliersQuery.data || [];
 
   return (
     <div className="page-grid">
@@ -53,13 +57,22 @@ export default function ProductsPage() {
               <h4>{product.name}</h4>
               <p>{product.description}</p>
               <p className="muted">Storage: {product.storage_requirements}</p>
-              <button type="button" onClick={() => orderMutation.mutate(product)}>
+              <button type="button" onClick={() => setOrderProduct(product)}>
                 Order now
               </button>
             </article>
           ))}
         </div>
       </section>
+
+      {orderProduct && (
+        <OrderEmailModal
+          product={orderProduct}
+          suppliers={suppliers}
+          farmName={farmName}
+          onClose={() => setOrderProduct(null)}
+        />
+      )}
     </div>
   );
 }

@@ -103,6 +103,23 @@
   max-height: none;
 }
 
+.panel-table {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panel-table .table-wrap {
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+}
+
+.panel-table .table-wrap-scroll {
+  height: 100%;
+  max-height: none;
+}
+
 .chart-scroll {
   width: 100%;
   overflow-x: auto;

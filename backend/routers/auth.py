@@ -85,6 +85,15 @@ def login(body: UserLogin):
         conn.close()
 
 
+@router.post("/logout")
+def logout(current_user: dict = Depends(get_current_user)):
+    """
+    Stateless logout — JWT cannot be server-side invalidated without a blacklist,
+    so this endpoint signals intent and lets the client clear its token.
+    """
+    return {"detail": "Logged out"}
+
+
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: dict = Depends(get_current_user)):
     conn = get_db_connection()

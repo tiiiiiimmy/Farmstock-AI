@@ -13,18 +13,21 @@ const navItems = [
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isTrialing, trialDaysLeft, logout } = useAuth();
+  const brandContent = (
+    <>
+      <p className="eyebrow">Farm supply dashboard</p>
+      <img className="brand-logo" src="/logo.png" alt="FarmStock AI" />
+      <p className="brand-copy">
+        Predict stock-outs, place supplier orders, and keep the office view in
+        sync with the FarmStock bot.
+      </p>
+    </>
+  );
 
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand">
-          <p className="eyebrow">Farm supply dashboard</p>
-          <img className="brand-logo" src="/logo.png" alt="FarmStock AI" />
-          <p className="brand-copy">
-            Predict stock-outs, place supplier orders, and keep the office view in
-            sync with the FarmStock bot.
-          </p>
-        </div>
+        <div className="brand">{brandContent}</div>
 
         <nav className="nav">
           {navItems.map((item) => (
@@ -52,6 +55,8 @@ export default function Layout() {
             <Link to="/pricing" style={{ color: '#15803d', fontWeight: 600, marginLeft: '1rem' }}>Upgrade →</Link>
           </div>
         )}
+        <div className="brand mobile-brand">{brandContent}</div>
+
         <header className="topbar">
           <div>
             <p className="eyebrow">Clawcat Technologies</p>

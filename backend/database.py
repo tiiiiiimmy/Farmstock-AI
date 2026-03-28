@@ -59,13 +59,31 @@ def get_db() -> sqlite3.Connection:
     return _connect(get_db_path())
 
 
-def init_db():
-    conn = _connect(get_db_path())
+def init_db(conn=None):
+    """Initialize database schema. Pass an open conn for testing (won't be closed)."""
+    external_conn = conn is not None
+    if conn is None:
+        conn = _connect(get_db_path())
     cur = conn.cursor()
 
     cur.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            email TEXT UNIQUE NOT NULL,
+            hashed_password TEXT NOT NULL,
+            full_name TEXT,
+            telegram_chat_id TEXT,
+            trial_ends_at TEXT NOT NULL,
+            stripe_customer_id TEXT,
+            stripe_subscription_id TEXT,
+            subscription_status TEXT NOT NULL DEFAULT 'trialing',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
         CREATE TABLE IF NOT EXISTS farms (
             id TEXT PRIMARY KEY,
+            user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
             name TEXT NOT NULL,
             region TEXT,
             farm_type TEXT,
@@ -162,8 +180,18 @@ def init_db():
         );
     """)
 
+    # Migration: add user_id to farms if upgrading from v1 (column may not exist)
+    existing_farm_cols = [r[1] for r in conn.execute("PRAGMA table_info(farms)").fetchall()]
+    if 'user_id' not in existing_farm_cols:
+        conn.execute("ALTER TABLE farms ADD COLUMN user_id TEXT REFERENCES users(id) ON DELETE CASCADE")
+
     conn.commit()
-    conn.close()
+    if not external_conn:
+        conn.close()
+
+
+# Backward-compatibility alias
+get_db_connection = get_db
 
 
 def seed_db():

@@ -208,6 +208,22 @@ class PlaceOrderRequest(BaseModel):
     items: List[dict]  # [{product_name, quantity, unit, unit_price}]
 
 
+class DraftOrderEmailRequest(BaseModel):
+    product_name: str
+    quantity: float
+    unit: str
+    supplier_name: str
+    supplier_contact: Optional[str] = None
+
+
+class SendSupplierEmailRequest(BaseModel):
+    to_email: str
+    subject: str
+    body: str
+    farm_name: str
+    farm_email: Optional[str] = None
+
+
 class ChatMessage(BaseModel):
     farm_id: Optional[str] = None  # Deprecated: farm resolved from JWT
     message: str

@@ -14,6 +14,7 @@ load_dotenv()
 from .database import ensure_db_ready
 from .routers import farms, orders, products, predictions, recommendations, alerts, place_order, spending, chat
 from .routers import auth as auth_router_module
+from .routers import billing as billing_router_module
 from .whatsapp import webhook
 from .telegram import webhook as telegram_webhook
 
@@ -45,6 +46,7 @@ app.include_router(spending.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(webhook.router, prefix="/api")
 app.include_router(telegram_webhook.router, prefix="/api")
+app.include_router(billing_router_module.router)
 
 
 @app.get("/health")

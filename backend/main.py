@@ -32,6 +32,13 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     ensure_db_ready()
+    from backend.scheduler import start_scheduler
+    start_scheduler()
+
+@app.on_event("shutdown")
+async def shutdown():
+    from backend.scheduler import stop_scheduler
+    stop_scheduler()
 
 
 app.include_router(auth_router_module.router)

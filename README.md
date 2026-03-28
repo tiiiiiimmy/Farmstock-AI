@@ -11,15 +11,17 @@ FarmStock AI is an AI-powered farm supply management platform for dairy and live
 
 ## Core Features
 
+- User registration, login, and JWT-authenticated sessions
+- 14-day free trial with Stripe subscription billing (monthly and annual plans)
+- Multi-farm isolation — each user only sees their own farms
 - Inventory coverage dashboard with reorder thresholds and delivery-gap burn analysis
 - Historical purchase log with create, edit, and delete flows
 - Farm profile management for region, herd size, land area, and contact details
 - Product catalogue with one-click ordering flow
 - Spending analytics and AI recommendations
-- AI chat assistant powered by Gemini
-- Bot integration support:
-  FarmStock bot simulation
-  Telegram bot support for simpler real-world testing
+- AI chat assistant — pluggable LLM backend (Claude, OpenAI, Gemini, MiniMax)
+- Daily weather alerts via APScheduler (cold snaps, heavy rain, high winds)
+- Bot integration: FarmStock bot simulation + Telegram bot
 - SQLite-backed demo dataset with seeded orders, alerts, products, and inventory snapshots
 
 ## Live Access
@@ -30,26 +32,35 @@ FarmStock AI is an AI-powered farm supply management platform for dairy and live
 
 ## Tech Stack
 
-- Frontend: React 18, Vite, TanStack Query, Recharts
-- Backend: FastAPI, SQLite, Pydantic
-- AI: Gemini API
+- Frontend: React 18, Vite, TanStack Query, Recharts, Tailwind CSS
+- Backend: FastAPI, SQLite, Pydantic, python-jose (JWT), passlib (bcrypt)
+- Billing: Stripe SDK
+- Scheduling: APScheduler (daily weather alerts, proactive notifications)
+- AI: Pluggable — Anthropic Claude, OpenAI, Google Gemini, or MiniMax (auto-selected by available key)
 - Bot support: Telegram Bot API, local FarmStock bot simulation
+- Weather: Open-Meteo (free, no key required)
 
 ## Project Structure
 
 ```text
 Farmstock-AI/
 ├── backend/
-│   ├── ai/
-│   ├── email/
-│   ├── routers/
-│   ├── telegram/
-│   ├── whatsapp/
-│   ├── database.py
-│   ├── main.py
-│   └── models.py
+│   ├── ai/                  # Pluggable LLM engine (Claude, OpenAI, Gemini, MiniMax)
+│   ├── email/               # SMTP order confirmation and alert emails
+│   ├── routers/             # FastAPI route handlers (auth, billing, farms, orders, …)
+│   ├── telegram/            # Telegram bot webhook + polling
+│   ├── whatsapp/            # FarmStock bot simulation endpoint
+│   ├── auth.py              # JWT creation, decoding, dependency injection
+│   ├── billing.py           # Stripe SDK wrapper
+│   ├── database.py          # SQLite schema + seed data
+│   ├── main.py              # App entry point, router registration, scheduler startup
+│   ├── models.py            # Pydantic models
+│   └── scheduler.py         # APScheduler jobs (daily weather alerts)
 ├── frontend/
 │   ├── src/
+│   │   ├── context/         # AuthContext (JWT token management)
+│   │   ├── components/      # ProtectedRoute and shared UI
+│   │   └── pages/           # Login, Register, Pricing, Dashboard, …
 │   ├── package.json
 │   └── vite.config.js
 ├── .env.example
@@ -72,12 +83,54 @@ cd Farmstock-AI
 cp .env.example .env
 ```
 
-Edit `.env` and fill in the values you want to use. At minimum, for AI chat:
+Edit `.env` and fill in the values you want to use.
+
+#### Required — JWT secret (auth will not start without this)
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_MODEL=gemini-2.5-flash
-GEMINI_MAX_OUTPUT_TOKENS=2048
+JWT_SECRET_KEY=change-me-to-a-random-32-char-secret
+JWT_EXPIRE_MINUTES=10080
+```
+
+Generate a strong secret:
+
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
+```
+
+#### AI chat — pick one provider (or set `AI_PROVIDER` explicitly)
+
+The backend auto-selects the first key it finds. Set whichever you have:
+
+```env
+# Anthropic Claude (recommended)
+ANTHROPIC_API_KEY=sk-ant-...
+CLAUDE_MODEL=claude-sonnet-4-6
+CLAUDE_MAX_TOKENS=2048
+
+# Google Gemini
+# GEMINI_API_KEY=...
+# GEMINI_MODEL=gemini-2.0-flash
+
+# OpenAI
+# OPENAI_API_KEY=sk-...
+# OPENAI_MODEL=gpt-4o-mini
+
+# MiniMax
+# MINIMAX_API_KEY=...
+# MINIMAX_API_BASE=https://api.minimax.chat/v1
+# MINIMAX_MODEL=MiniMax-Text-01
+
+# Force a specific provider (optional)
+# AI_PROVIDER=anthropic
+```
+
+If no AI key is provided, the app falls back to local demo responses.
+
+#### Other settings
+
+```env
+DATABASE_PATH=backend/farmstock.db
 
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 TELEGRAM_DEFAULT_FARM_ID=farm-001
@@ -86,17 +139,23 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
 SMTP_PASSWORD=your_app_password
+FARM_EMAIL=farmer@example.com
 
-DATABASE_PATH=backend/farmstock.db
+# Stripe (only needed for billing/subscriptions)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_MONTHLY_PRICE_ID=price_...
+STRIPE_ANNUAL_PRICE_ID=price_...
+APP_URL=http://localhost:5173
 ```
 
 Notes:
 
-- `GEMINI_API_KEY` is required for real AI responses.
-- `GEMINI_MAX_OUTPUT_TOKENS` controls how long AI replies can be.
-- If `GEMINI_API_KEY` is missing, chat falls back to local demo logic.
+- `JWT_SECRET_KEY` is **required**. The backend will reject all auth requests without it.
 - `TELEGRAM_BOT_TOKEN` is only needed if you want to connect the Telegram bot.
-- SMTP credentials are optional unless you want real order emails.
+- SMTP credentials are optional unless you want real order confirmation emails.
+- Stripe keys are optional unless you want real subscription billing.
 
 ### 3. Install backend dependencies
 
@@ -212,16 +271,18 @@ Then message your bot in Telegram with commands like:
 
 ## AI Chat
 
-The web chat and backend `/api/chat` endpoint use Gemini.
+The web chat and the `/api/chat` endpoint support four AI providers: **Anthropic Claude**, **OpenAI**, **Google Gemini**, and **MiniMax**.
 
-If Gemini is configured correctly, the assistant will answer with live AI responses informed by:
+The backend auto-selects a provider based on which API key is present in `.env`. You can also pin one with `AI_PROVIDER=anthropic|openai|gemini|minimax`.
+
+When configured, the assistant answers with live AI responses informed by:
 
 - farm profile
 - recent orders
 - depletion predictions
 - recommendations
 
-If Gemini is not configured, the app still works in local fallback mode.
+If no AI key is provided, the app still works in local fallback mode.
 
 ## Default Demo Data
 

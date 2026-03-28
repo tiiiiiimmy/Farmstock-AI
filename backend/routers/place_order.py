@@ -6,9 +6,10 @@ import uuid
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Depends
 from ..database import get_db
-from ..models import PlaceOrderRequest
+from ..models import PlaceOrderRequest, DraftOrderEmailRequest, SendSupplierEmailRequest
 from ..auth import get_user_farm
-from ..mailer.order_email import send_order_email
+from ..mailer.order_email import send_order_email, send_custom_order_email
+from ..ai.engine import draft_order_email
 
 router = APIRouter()
 
@@ -104,6 +105,40 @@ def place_order(req: PlaceOrderRequest, farm: dict = Depends(get_user_farm)):
         }
     finally:
         conn.close()
+
+
+@router.post("/draft-order-email")
+def draft_order_email_endpoint(req: DraftOrderEmailRequest, farm: dict = Depends(get_user_farm)):
+    """Use AI to draft a purchase order email for the given product and supplier."""
+    result = draft_order_email(
+        product_name=req.product_name,
+        quantity=req.quantity,
+        unit=req.unit,
+        supplier_name=req.supplier_name,
+        supplier_contact=req.supplier_contact or "Sales Team",
+        farm_name=farm.get("name", "Farm"),
+    )
+    return result
+
+
+@router.post("/send-supplier-email")
+def send_supplier_email_endpoint(req: SendSupplierEmailRequest, farm: dict = Depends(get_user_farm)):
+    """Send a custom order email to a supplier."""
+    conn = get_db()
+    try:
+        farm_row = conn.execute("SELECT * FROM farms WHERE id = ?", (farm["id"],)).fetchone()
+        farm_email = req.farm_email or (dict(farm_row).get("email") if farm_row else None)
+    finally:
+        conn.close()
+
+    sent = send_custom_order_email(
+        to_email=req.to_email,
+        subject=req.subject,
+        body_text=req.body,
+        from_name=req.farm_name,
+        reply_to=farm_email,
+    )
+    return {"sent": sent}
 
 
 @router.get("/placed-orders")

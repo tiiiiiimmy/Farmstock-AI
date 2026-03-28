@@ -194,6 +194,43 @@ def init_db(conn=None):
 get_db_connection = get_db
 
 
+def seed_demo_farm(conn, farm_id: str, user_id: str = None):
+    """Seed 6 months of demo purchase history for a newly registered farm."""
+    import uuid
+    import random
+    from datetime import date, timedelta
+
+    today = date.today()
+    demo_orders = [
+        # (product_name, category, qty, unit, unit_price, days_ago_min, days_ago_max, frequency_days)
+        ("Ivomec Plus Drench 2.5L", "veterinary", 2, "units", 89.50, 0, 180, 45),
+        ("Dairy Pellets 20kg", "feed", 50, "units", 18.50, 0, 180, 14),
+        ("Superphosphate", "fertiliser", 5, "tonnes", 395.00, 30, 150, 90),
+        ("Palm Kernel Extract", "feed", 2, "tonnes", 320.00, 0, 120, 30),
+        ("Zinc Oxide Supplement", "veterinary", 10, "units", 24.00, 0, 90, 60),
+        ("Ryegrass Seed 20kg", "fertiliser", 20, "units", 45.00, 60, 150, 180),
+    ]
+
+    for product_name, category, qty, unit, unit_price, min_ago, max_ago, freq in demo_orders:
+        num_orders = max(1, max_ago // freq)
+        for i in range(num_orders):
+            days_ago = min_ago + (i * freq) + random.randint(-5, 5)
+            if days_ago < 0:
+                continue
+            order_date = (today - timedelta(days=days_ago)).isoformat()
+            variation = random.uniform(0.9, 1.1)
+            order_qty = round(qty * variation, 1)
+            order_price = round(unit_price * variation, 2)
+            conn.execute(
+                """INSERT INTO orders (id, farm_id, date, product_name, category,
+                   quantity, unit, unit_price, total_price, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))""",
+                (str(uuid.uuid4()), farm_id, order_date, product_name, category,
+                 order_qty, unit, order_price, round(order_qty * order_price, 2))
+            )
+    conn.commit()
+
+
 def seed_db():
     conn = _connect(get_db_path())
     cur = conn.cursor()

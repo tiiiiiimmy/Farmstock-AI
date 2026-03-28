@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
+import { queryKeys } from "../api/queryKeys";
 import OrderTable from "../components/OrderTable";
 
 const unitOptions = ["kg", "L", "tonnes", "units", "mL", "Custom..."];
@@ -25,8 +26,8 @@ export default function OrdersPage() {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState("");
   const ordersQuery = useQuery({
-    queryKey: ["orders"],
-    queryFn: () => api.getOrders()
+    queryKey: queryKeys.orders.all(),
+    queryFn: api.getOrders
   });
 
   const createMutation = useMutation({
@@ -37,7 +38,7 @@ export default function OrdersPage() {
       setUnitMode("preset");
       setErrors({});
       setSubmitError("");
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all() });
     },
     onError: (error) => {
       setSubmitError(error.message || "Unable to save order");
@@ -52,7 +53,7 @@ export default function OrdersPage() {
       setUnitMode("preset");
       setErrors({});
       setSubmitError("");
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all() });
     },
     onError: (error) => {
       setSubmitError(error.message || "Unable to update order");
@@ -67,7 +68,7 @@ export default function OrdersPage() {
         setEditingOrderId(null);
         setUnitMode("preset");
       }
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.all() });
     }
   });
 

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link } from 'react-router-dom';
 import { api } from "../api/client";
+import { queryKeys } from "../api/queryKeys";
 import { useAuth } from '../context/AuthContext';
 
 export default function FarmProfilePage() {
@@ -9,13 +10,13 @@ export default function FarmProfilePage() {
 
   // Resolve the user's farm ID via the /api/farms list endpoint
   const farmsQuery = useQuery({
-    queryKey: ["farms"],
-    queryFn: () => api.getFarms()
+    queryKey: queryKeys.farms.all(),
+    queryFn: api.getFarms
   });
   const farmId = farmsQuery.data?.[0]?.id;
 
   const farmQuery = useQuery({
-    queryKey: ["farm", farmId],
+    queryKey: queryKeys.farms.detail(farmId),
     queryFn: () => api.getFarm(farmId),
     enabled: !!farmId
   });
@@ -25,7 +26,7 @@ export default function FarmProfilePage() {
 
   const { isTrialing, trialDaysLeft } = useAuth()
   const subStatusQuery = useQuery({
-    queryKey: ['subscription'],
+    queryKey: queryKeys.subscription(),
     queryFn: () => api.getSubscriptionStatus(),
   })
   const subStatus = subStatusQuery.data
@@ -41,7 +42,7 @@ export default function FarmProfilePage() {
     onSuccess: () => {
       setSubmitError("");
       setErrors({});
-      queryClient.invalidateQueries({ queryKey: ["farm"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.farms.detail(farmId) });
     },
     onError: (error) => {
       setSubmitError(error.message || "Unable to save farm profile");

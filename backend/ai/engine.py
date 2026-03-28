@@ -289,6 +289,63 @@ def _fallback_response(message: str, farm_profile: dict, predictions: list, reco
     return f"I'm FarmStock AI, your farm supply assistant. I can help with stock predictions, order recommendations, and spending analysis for {farm_name}. What would you like to know?"
 
 
+def draft_order_email(
+    product_name: str,
+    quantity: float,
+    unit: str,
+    supplier_name: str,
+    supplier_contact: str,
+    farm_name: str,
+) -> dict:
+    """
+    Use the configured LLM to draft a purchase order email.
+    Returns {"subject": str, "body": str}.
+    Falls back to a template if no LLM is configured.
+    """
+    import json as _json
+
+    template_subject = f"Purchase Order — {product_name} — {farm_name}"
+    template_body = (
+        f"Dear {supplier_contact or supplier_name or 'Sales Team'},\n\n"
+        f"I would like to place an order for the following:\n\n"
+        f"  Product: {product_name}\n"
+        f"  Quantity: {quantity} {unit}\n\n"
+        f"Please confirm availability and pricing at your earliest convenience.\n\n"
+        f"Kind regards,\n{farm_name}"
+    )
+
+    provider = _resolve_provider()
+    if provider is None:
+        return {"subject": template_subject, "body": template_body}
+
+    system = (
+        "You are a professional purchasing assistant for a New Zealand farm. "
+        "Draft a concise, polite purchase order email. "
+        "Reply with ONLY a JSON object with two keys: \"subject\" (string) and \"body\" (string, plain text). "
+        "No markdown, no code fences, just the raw JSON."
+    )
+    prompt = (
+        f"Draft a purchase order email from {farm_name} to supplier {supplier_name}.\n"
+        f"Product: {product_name}\n"
+        f"Quantity: {quantity} {unit}\n"
+        f"Supplier contact: {supplier_contact or 'Sales Team'}\n"
+        f"Keep the email professional and under 120 words."
+    )
+
+    try:
+        raw = _invoke_llm(provider, system, [{"role": "user", "content": prompt}])
+        # Strip any markdown fences just in case
+        cleaned = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
+        data = _json.loads(cleaned)
+        return {
+            "subject": data.get("subject", template_subject),
+            "body": data.get("body", template_body),
+        }
+    except Exception as e:
+        print(f"[LLM draft_order_email] {e}")
+        return {"subject": template_subject, "body": template_body}
+
+
 async def chat_with_ai(message: str, farm_context: dict, conversation_history: list) -> str:
     """Async wrapper for chat.py compatibility — maps farm_context dict to generate_response args."""
     return generate_response(

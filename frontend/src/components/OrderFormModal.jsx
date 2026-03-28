@@ -160,6 +160,14 @@ export default function OrderFormModal({
             <button type="submit" disabled={isSubmitting}>
               {editingOrderId ? "Save changes" : "Create order"}
             </button>
+            <button
+              type="button"
+              className="secondary-button mobile-modal-cancel"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
           </div>
         </form>
       </section>

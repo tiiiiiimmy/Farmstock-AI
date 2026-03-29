@@ -194,7 +194,11 @@ export default function ProductsPage() {
         </div>
 
         {/* ── Product grid or empty state ────────────────────── */}
-        {products.length === 0 ? (
+        {productsQuery.isLoading ? (
+          <p className="muted" style={{ padding: "2rem 0", textAlign: "center" }}>
+            Loading…
+          </p>
+        ) : products.length === 0 ? (
           <div
             className="muted"
             style={{ padding: "2rem 0", textAlign: "center", fontSize: "0.875rem" }}

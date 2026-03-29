@@ -206,6 +206,133 @@
   gap: 1rem;
 }
 
+/* ─── Products filter bar ─────────────────────────────────── */
+
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tag-btn {
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: var(--surface);
+  color: var(--ink-2);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  transition: background var(--t), color var(--t), border-color var(--t);
+  white-space: nowrap;
+}
+
+.tag-btn:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.tag-btn.active {
+  background: var(--brand-light);
+  color: var(--brand);
+  border-color: rgba(20, 92, 51, 0.35);
+}
+
+/* Zone tag base colours (always visible, border signals selection) */
+.tag-btn.zone-green {
+  background: var(--green-soft);
+  color: var(--green);
+  border-color: transparent;
+}
+
+.tag-btn.zone-amber {
+  background: var(--amber-soft);
+  color: var(--amber);
+  border-color: transparent;
+}
+
+.tag-btn.zone-red {
+  background: var(--red-soft);
+  color: var(--red);
+  border-color: transparent;
+}
+
+.tag-btn.zone-green.active  { border-color: var(--green); }
+.tag-btn.zone-amber.active  { border-color: var(--amber); }
+.tag-btn.zone-red.active    { border-color: var(--red); }
+
+/* Active filter chips */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.35rem 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--border-strong);
+}
+
+.chip button {
+  background: transparent;
+  color: var(--ink-2);
+  padding: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.chip button:hover {
+  background: var(--border-strong);
+  color: var(--ink);
+}
+
+.filter-count {
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--r-sm);
+  border: none;
+}
+
+.btn-ghost:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+/* ─── Supplier select (filter row, fixed width) ─────────────── */
+.supplier-select {
+  width: 180px;
+  flex-shrink: 0;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.82rem;
+}
+
 /* ─── Chat ─────────────────────────────────────────────────── */
 
 .chat-panel {

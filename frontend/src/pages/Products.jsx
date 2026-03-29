@@ -73,6 +73,7 @@ export default function ProductsPage() {
     setSelectedCategories(new Set());
     setSelectedZones(new Set());
     setSelectedSupplierId("");
+    setSearch("");
   }
 
   const hasFilters =

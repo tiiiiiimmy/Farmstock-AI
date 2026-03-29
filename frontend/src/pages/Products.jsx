@@ -51,7 +51,7 @@ export default function ProductsPage() {
       if (linkedIds && !linkedIds.has(p.id)) return false;
       return true;
     });
-  }, [productsQuery.data, deferredSearch, selectedCategories, selectedZones, selectedSupplierId, suppliers]);
+  }, [productsQuery.data, deferredSearch, selectedCategories, selectedZones, selectedSupplierId, suppliersQuery.data]);
 
   function toggleCategory(cat) {
     setSelectedCategories((prev) => {

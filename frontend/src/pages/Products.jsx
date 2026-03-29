@@ -107,30 +107,125 @@ export default function ProductsPage() {
       <section className="panel">
         <div className="panel-header">
           <h3>Catalogue + One-Click Ordering</h3>
-          <input
-            className="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search products"
-          />
         </div>
 
-        <div className="product-grid">
-          {products.map((product) => (
-            <article key={product.id} className="product-card">
-              <div className="alert-meta">
-                <span className={`pill pill-${product.shelf_life_zone}`}>{product.shelf_life_zone}</span>
-                <span>{product.category}</span>
-              </div>
-              <h4>{product.name}</h4>
-              <p>{product.description}</p>
-              <p className="muted">Storage: {product.storage_requirements}</p>
-              <button type="button" onClick={() => setOrderProduct(product)}>
-                Order now
+        {/* ── Filter bar ─────────────────────────────────────── */}
+        <div className="filter-bar">
+
+          {/* Row 1: search + supplier dropdown */}
+          <div className="filter-row">
+            <input
+              className="search"
+              style={{ flex: 1 }}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search products"
+            />
+            <select
+              className="supplier-select"
+              value={selectedSupplierId}
+              onChange={(e) => setSelectedSupplierId(e.target.value)}
+            >
+              <option value="">All suppliers</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Row 2: category tags + zone tags */}
+          <div className="filter-row">
+            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", flex: 1 }}>
+              <button
+                type="button"
+                className={`tag-btn${selectedCategories.size === 0 ? " active" : ""}`}
+                onClick={() => setSelectedCategories(new Set())}
+              >
+                All
               </button>
-            </article>
-          ))}
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  className={`tag-btn${selectedCategories.has(cat) ? " active" : ""}`}
+                  onClick={() => toggleCategory(cat)}
+                >
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: "0.4rem" }}>
+              {ZONES.map((zone) => (
+                <button
+                  key={zone}
+                  type="button"
+                  className={`tag-btn zone-${zone}${selectedZones.has(zone) ? " active" : ""}`}
+                  onClick={() => toggleZone(zone)}
+                >
+                  {zone.charAt(0).toUpperCase() + zone.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Active filter chips — only visible when something is selected */}
+          {hasFilters && (
+            <div className="filter-row">
+              {activeChips.map((chip) => (
+                <span key={chip.key} className="chip">
+                  {chip.label}
+                  <button
+                    type="button"
+                    onClick={chip.onRemove}
+                    aria-label={`Remove ${chip.label} filter`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <button type="button" className="btn-ghost" onClick={clearAll}>
+                Clear all
+              </button>
+              <span className="filter-count">{products.length} products</span>
+            </div>
+          )}
         </div>
+
+        {/* ── Product grid or empty state ────────────────────── */}
+        {products.length === 0 ? (
+          <div
+            className="muted"
+            style={{ padding: "2rem 0", textAlign: "center", fontSize: "0.875rem" }}
+          >
+            No products match your filters.{" "}
+            {hasFilters && (
+              <button type="button" className="btn-ghost" onClick={clearAll}>
+                Clear filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="product-grid">
+            {products.map((product) => (
+              <article key={product.id} className="product-card">
+                <div className="alert-meta">
+                  <span className={`pill pill-${product.shelf_life_zone}`}>
+                    {product.shelf_life_zone}
+                  </span>
+                  <span>{product.category}</span>
+                </div>
+                <h4>{product.name}</h4>
+                <p>{product.description}</p>
+                <p className="muted">Storage: {product.storage_requirements}</p>
+                <button type="button" onClick={() => setOrderProduct(product)}>
+                  Order now
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       {orderProduct && (
@@ -140,7 +235,9 @@ export default function ProductsPage() {
           farmId={farmId}
           farmName={farmName}
           onClose={() => setOrderProduct(null)}
-          onSupplierCreated={() => queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(farmId) })}
+          onSupplierCreated={() =>
+            queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(farmId) })
+          }
         />
       )}
     </div>

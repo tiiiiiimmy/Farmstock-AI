@@ -33,7 +33,7 @@ export default function Login() {
         <h1 className="auth-title">Welcome back</h1>
         <p className="auth-subtitle">Sign in to your FarmStock account</p>
 
-        {error && <p className="form-error-banner" style={{ marginBottom: '1rem' }}>{error}</p>}
+        {error && <p className="form-error-banner auth-error-banner">{error}</p>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="field-group">

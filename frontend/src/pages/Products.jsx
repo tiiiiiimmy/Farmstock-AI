@@ -3,6 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import OrderEmailModal from "../components/OrderEmailModal";
+import PageState from "../components/PageState";
+import { useCurrentFarm } from "../context/CurrentFarmContext";
+import { formatEnumLabel } from "../utils/formatters";
 
 const CATEGORIES = ["feed", "fertiliser", "veterinary", "chemical", "equipment"];
 const ZONES = ["green", "amber", "red"];
@@ -12,6 +15,7 @@ export default function ProductsPage() {
   const deferredSearch = useDeferredValue(search);
   const [orderProduct, setOrderProduct] = useState(null);
   const queryClient = useQueryClient();
+  const { currentFarm, currentFarmId, farmsQuery } = useCurrentFarm();
 
   const [selectedCategories, setSelectedCategories] = useState(new Set());
   const [selectedZones, setSelectedZones] = useState(new Set());
@@ -22,18 +26,10 @@ export default function ProductsPage() {
     queryFn: api.getProducts,
   });
 
-  const farmsQuery = useQuery({
-    queryKey: queryKeys.farms.all(),
-    queryFn: api.getFarms,
-  });
-
-  const farmId = farmsQuery.data?.[0]?.id;
-  const farmName = farmsQuery.data?.[0]?.name || "Farm";
-
   const suppliersQuery = useQuery({
-    queryKey: queryKeys.suppliers(farmId),
-    queryFn: () => api.getSuppliers(farmId),
-    enabled: !!farmId,
+    queryKey: queryKeys.suppliers(currentFarmId),
+    queryFn: () => api.getSuppliers(currentFarmId),
+    enabled: Boolean(currentFarmId),
   });
 
   const suppliers = suppliersQuery.data || [];
@@ -102,6 +98,64 @@ export default function ProductsPage() {
         ]
       : []),
   ];
+
+  if (farmsQuery.isLoading) {
+    return (
+      <PageState
+        title="Loading farm context"
+        message="We are working out which farm catalogue to show."
+      />
+    );
+  }
+
+  if (farmsQuery.isError) {
+    return (
+      <PageState
+        tone="error"
+        title="Unable to load farms"
+        message={farmsQuery.error?.message || "We could not load your farm list."}
+        actionLabel="Try again"
+        onAction={() => farmsQuery.refetch()}
+      />
+    );
+  }
+
+  if (!currentFarm) {
+    return (
+      <PageState
+        title="No farms yet"
+        message="Create or connect a farm before browsing supplier-linked products."
+      />
+    );
+  }
+
+  if (productsQuery.isLoading || suppliersQuery.isLoading) {
+    return (
+      <PageState
+        title="Loading products"
+        message={`Fetching catalogue data for ${currentFarm.name}.`}
+      />
+    );
+  }
+
+  if (productsQuery.isError || suppliersQuery.isError) {
+    return (
+      <PageState
+        tone="error"
+        title="Products could not be loaded"
+        message={
+          productsQuery.error?.message ||
+          suppliersQuery.error?.message ||
+          "Something went wrong while loading products."
+        }
+        actionLabel="Try again"
+        onAction={() => {
+          productsQuery.refetch();
+          suppliersQuery.refetch();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="page-grid">
@@ -195,11 +249,7 @@ export default function ProductsPage() {
         </div>
 
         {/* ── Product grid or empty state ────────────────────── */}
-        {productsQuery.isLoading ? (
-          <p className="muted" style={{ padding: "2rem 0", textAlign: "center" }}>
-            Loading…
-          </p>
-        ) : products.length === 0 ? (
+        {products.length === 0 ? (
           <div
             className="muted"
             style={{ padding: "2rem 0", textAlign: "center", fontSize: "0.875rem" }}
@@ -217,9 +267,9 @@ export default function ProductsPage() {
               <article key={product.id} className="product-card">
                 <div className="alert-meta">
                   <span className={`pill pill-${product.shelf_life_zone}`}>
-                    {product.shelf_life_zone}
+                    {formatEnumLabel(product.shelf_life_zone)}
                   </span>
-                  <span>{product.category}</span>
+                  <span>{formatEnumLabel(product.category)}</span>
                 </div>
                 <h4>{product.name}</h4>
                 <p>{product.description}</p>
@@ -237,11 +287,11 @@ export default function ProductsPage() {
         <OrderEmailModal
           product={orderProduct}
           suppliers={suppliers}
-          farmId={farmId}
-          farmName={farmName}
+          farmId={currentFarm.id}
+          farmName={currentFarm.name}
           onClose={() => setOrderProduct(null)}
           onSupplierCreated={() =>
-            queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(farmId) })
+            queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(currentFarmId) })
           }
         />
       )}

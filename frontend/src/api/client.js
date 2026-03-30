@@ -96,6 +96,11 @@ export const api = {
   getAlerts: () => request("/api/alerts"),
   updateAlert: (alertId, status) => request(`/api/alerts/${alertId}?status=${status}`, { method: "PUT" }),
   getSpending: (params = "") => request(`/api/spending${params ? `?${params}` : ""}`),
+  getPriceBenchmark: (productName, supplierId) => {
+    const params = new URLSearchParams({ product_name: productName });
+    if (supplierId) params.append("supplier_id", supplierId);
+    return request(`/api/price-benchmark?${params.toString()}`);
+  },
   placeOrder: (payload) => request("/api/place-order", { method: "POST", body: JSON.stringify(payload) }),
   sendChat: (payload) => request("/api/chat", { method: "POST", body: JSON.stringify(payload) }),
   getSubscriptionStatus: () => request("/api/billing/status"),

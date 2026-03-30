@@ -335,6 +335,20 @@ textarea::placeholder {
   color: var(--ink);
 }
 
+.field-optional {
+  font-weight: 400;
+  margin-left: 0.3rem;
+}
+
+.field-required {
+  color: var(--red);
+}
+
+.field-help {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+
 .field-error {
   font-size: 0.78rem;
   color: var(--red);
@@ -422,7 +436,7 @@ textarea::placeholder {
 
 .modal-dialog {
   width: min(100%, 640px);
-  min-height: min(90vh, 840px);
+  max-height: min(90vh, 840px);
   border: 1px solid var(--border);
   border-radius: var(--r-xl);
   padding: 1.4rem;
@@ -431,7 +445,13 @@ textarea::placeholder {
 }
 
 .modal-dialog-compact {
-  min-height: auto;
+  max-height: none;
+}
+
+.modal-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .modal-header {
@@ -455,6 +475,167 @@ textarea::placeholder {
   color: var(--ink-2);
 }
 
+.modal-scroll-body {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-right: 0.25rem;
+}
+
+.modal-success {
+  padding: 0.75rem 0.1rem 0.1rem;
+  text-align: center;
+}
+
+.modal-success-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.modal-success-copy {
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem;
+}
+
+.modal-success-note {
+  font-size: 0.85rem;
+  margin: 0 0 1.5rem;
+}
+
+.modal-success-spacer {
+  margin-bottom: 1.5rem;
+}
+
+.form-grid-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.modal-inline-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.15rem;
+}
+
+.modal-inline-action {
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0;
+}
+
+.modal-inline-action-left {
+  align-self: flex-start;
+}
+
+.modal-full-width-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.modal-message-input {
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.supplier-products-label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.supplier-products-list {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.supplier-products-section {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: var(--surface-2);
+}
+
+.supplier-products-section-bordered {
+  border-top: 1px solid var(--border);
+}
+
+.supplier-product-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--t);
+}
+
+.supplier-product-row:hover {
+  background: var(--surface-2);
+}
+
+.supplier-product-row-selected {
+  background: rgba(45, 106, 79, 0.06);
+}
+
+.supplier-product-row-selected:hover {
+  background: rgba(45, 106, 79, 0.11);
+}
+
+.supplier-product-row-dim {
+  opacity: 0.55;
+}
+
+.supplier-product-name {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.supplier-product-name-selected {
+  font-weight: 500;
+  color: var(--green);
+}
+
+.supplier-product-category {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+
+.supplier-product-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid rgba(45, 106, 79, 0.35);
+  background: rgba(45, 106, 79, 0.08);
+  color: var(--green);
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+.supplier-product-icon-remove {
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  font-size: 1rem;
+}
+
+.supplier-products-empty {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
 @media (max-width: 768px) {
   .modal-backdrop {
     align-items: start;
@@ -463,7 +644,7 @@ textarea::placeholder {
 
   .modal-dialog {
     width: 100%;
-    min-height: calc(100dvh - 1.5rem);
+    max-height: calc(100dvh - 1.5rem);
     margin-block: 0;
     padding: 1rem;
     border-radius: var(--r-lg);
@@ -493,6 +674,10 @@ textarea::placeholder {
     min-height: 84px;
   }
 
+  .form-grid-two {
+    grid-template-columns: 1fr;
+  }
+
   .mobile-modal-cancel {
     display: inline-flex;
   }
@@ -506,6 +691,31 @@ textarea::placeholder {
   place-items: center;
   color: var(--ink-2);
   font-size: 0.9rem;
+}
+
+.page-state {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.page-state-compact {
+  min-height: 180px;
+}
+
+.page-state-content {
+  max-width: 420px;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.page-state-content p {
+  margin: 0;
+}
+
+.page-state-error {
+  border-color: rgba(184, 50, 40, 0.15);
 }
 
 /* ─── Utilities ───────────────────────────────────────────── */

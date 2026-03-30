@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ModalBase from "./ModalBase";
 
 /**
  * Combined Add / Edit supplier modal with product association checklist.
@@ -24,12 +25,16 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
   const [selectedIds, setSelectedIds] = useState(new Set(supplier?.product_ids || []));
   const [fieldErrors, setFieldErrors] = useState({});
 
-  // Escape to close
   useEffect(() => {
-    const handler = (e) => { if (e.key === "Escape" && !saving) onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose, saving]);
+    setName(supplier?.name || "");
+    setContactName(supplier?.contact_name || "");
+    setEmail(supplier?.contact_email || "");
+    setCategories(
+      Array.isArray(supplier?.categories) ? supplier.categories.join(", ") : (supplier?.categories || "")
+    );
+    setSelectedIds(new Set(supplier?.product_ids || []));
+    setFieldErrors({});
+  }, [supplier]);
 
   // Compute which product_ids already have at least one supplier (other than this one)
   const assignedElsewhere = new Set(
@@ -82,32 +87,18 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
   ].filter((s) => s.items.length > 0);
 
   return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && !saving && onClose()}>
-      <div className="modal-dialog" style={{ maxWidth: "560px", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-        <div className="modal-header" style={{ flexShrink: 0 }}>
-          <div>
-            <p className="modal-eyebrow field-label">Preferred Suppliers</p>
-            <h3>{isEdit ? "Edit supplier" : "Add supplier"}</h3>
-          </div>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={onClose}
-            disabled={saving}
-            style={{ padding: 0, width: "32px", height: "32px", borderRadius: "999px", fontSize: "1.1rem", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}
-          >
-            ×
-          </button>
-        </div>
-
-        <form
-          className="form-grid"
-          onSubmit={handleSubmit}
-          style={{ overflowY: "auto", flex: 1, paddingRight: "0.25rem" }}
-        >
+    <ModalBase
+      isOpen={true}
+      isBlocking={saving}
+      onClose={onClose}
+      eyebrow="Preferred Suppliers"
+      title={isEdit ? "Edit supplier" : "Add supplier"}
+      dialogStyle={{ maxWidth: "560px" }}
+    >
+      <form className="form-grid modal-scroll-body" onSubmit={handleSubmit}>
           {/* ── Supplier details ── */}
           <label className="field-group">
-            <span className="field-label">Supplier name <span style={{ color: "var(--red)" }}>*</span></span>
+            <span className="field-label">Supplier name <span className="field-required">*</span></span>
             <input
               value={name}
               onChange={(e) => { setName(e.target.value); setFieldErrors((f) => ({ ...f, name: "" })); }}
@@ -118,7 +109,7 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
           </label>
 
           <label className="field-group">
-            <span className="field-label">Contact name <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></span>
+            <span className="field-label">Contact name <span className="muted field-optional">(optional)</span></span>
             <input
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
@@ -127,7 +118,7 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
           </label>
 
           <label className="field-group">
-            <span className="field-label">Contact email <span style={{ color: "var(--red)" }}>*</span></span>
+            <span className="field-label">Contact email <span className="field-required">*</span></span>
             <input
               type="email"
               value={email}
@@ -138,7 +129,7 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
           </label>
 
           <label className="field-group">
-            <span className="field-label">Categories <span className="muted" style={{ fontWeight: 400 }}>(comma-separated)</span></span>
+            <span className="field-label">Categories <span className="muted field-optional">(comma-separated)</span></span>
             <input
               value={categories}
               onChange={(e) => setCategories(e.target.value)}
@@ -149,31 +140,18 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
           {/* ── Product association ── */}
           {products && products.length > 0 && (
             <div className="field-group">
-              <span className="field-label" style={{ marginBottom: "0.5rem", display: "block" }}>
+              <span className="field-label supplier-products-label">
                 Associate products
-                <span className="muted" style={{ fontWeight: 400, marginLeft: "0.4rem" }}>
+                <span className="muted field-optional">
                   ({selectedIds.size} selected)
                 </span>
               </span>
 
-              <div style={{
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius)",
-                overflow: "hidden",
-              }}>
+              <div className="supplier-products-list">
                 {productSections.map(({ label, items, dim }, si) => (
                   <div key={label}>
                     {productSections.length > 1 && (
-                      <div style={{
-                        padding: "0.35rem 0.75rem",
-                        fontSize: "0.7rem",
-                        fontWeight: 600,
-                        letterSpacing: "0.05em",
-                        textTransform: "uppercase",
-                        color: "var(--text-muted)",
-                        background: "var(--bg-subtle, #f8f9fa)",
-                        borderTop: si > 0 ? "1px solid var(--border)" : "none",
-                      }}>
+                      <div className={`supplier-products-section${si > 0 ? " supplier-products-section-bordered" : ""}`}>
                         {label}
                       </div>
                     )}
@@ -183,55 +161,15 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
                         <div
                           key={p.id}
                           onClick={() => toggleProduct(p.id)}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.65rem",
-                            padding: "0.5rem 0.75rem",
-                            borderTop: "1px solid var(--border)",
-                            background: isChecked ? "rgba(45,106,79,0.06)" : "",
-                            opacity: dim && !isChecked ? 0.55 : 1,
-                            cursor: "pointer",
-                            userSelect: "none",
-                            transition: "background 0.12s",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = isChecked
-                              ? "rgba(45,106,79,0.11)"
-                              : "var(--bg-subtle, #f8f9fa)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = isChecked ? "rgba(45,106,79,0.06)" : "";
-                          }}
+                          className={`supplier-product-row${isChecked ? " supplier-product-row-selected" : ""}${dim && !isChecked ? " supplier-product-row-dim" : ""}`}
                         >
-                          <span style={{
-                            flex: 1,
-                            fontSize: "0.875rem",
-                            fontWeight: isChecked ? 500 : 400,
-                            color: isChecked ? "var(--green, #2d6a4f)" : "inherit",
-                          }}>
+                          <span className={`supplier-product-name${isChecked ? " supplier-product-name-selected" : ""}`}>
                             {p.name}
                           </span>
-                          <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                          <span className="supplier-product-category">
                             {p.category}
                           </span>
-                          {/* action icon — visual indicator only, click is on the row */}
-                          <span style={{
-                            flexShrink: 0,
-                            width: "22px",
-                            height: "22px",
-                            borderRadius: "6px",
-                            border: isChecked
-                              ? "1px solid rgba(220,38,38,0.35)"
-                              : "1px solid rgba(45,106,79,0.35)",
-                            background: isChecked ? "rgba(220,38,38,0.08)" : "rgba(45,106,79,0.08)",
-                            color: isChecked ? "#dc2626" : "var(--green, #2d6a4f)",
-                            fontSize: isChecked ? "1rem" : "1.1rem",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            pointerEvents: "none",
-                          }}>
+                          <span className={`supplier-product-icon${isChecked ? " supplier-product-icon-remove" : ""}`}>
                             {isChecked ? "×" : "+"}
                           </span>
                         </div>
@@ -241,7 +179,7 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
                 ))}
 
                 {productSections.length === 0 && (
-                  <p style={{ padding: "0.75rem", fontSize: "0.875rem", color: "var(--text-muted)", margin: 0 }}>
+                  <p className="supplier-products-empty">
                     All products are already associated with suppliers.
                   </p>
                 )}
@@ -259,8 +197,7 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
               Cancel
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </ModalBase>
   );
 }

@@ -5,6 +5,11 @@ import { api } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import { useAuth } from "../context/AuthContext";
 import SupplierModal from "../components/SupplierModal";
+import ModalBase from "../components/ModalBase";
+import PageState from "../components/PageState";
+import { useCurrentFarm } from "../context/CurrentFarmContext";
+import useFarmProfileForm from "../hooks/useFarmProfileForm";
+import { formatDaysLabel } from "../utils/formatters";
 
 /* ── Subscription banner ──────────────────────────────────── */
 
@@ -16,7 +21,7 @@ function SubBanner({ subStatus, trialDaysLeft }) {
         {active
           ? "Active subscription — all features unlocked"
           : subStatus?.status === "trialing"
-          ? `Free trial — ${trialDaysLeft} day${trialDaysLeft !== 1 ? "s" : ""} remaining`
+          ? `Free trial — ${formatDaysLabel(trialDaysLeft)} remaining`
           : subStatus
           ? "Trial expired"
           : "Loading…"}
@@ -56,19 +61,13 @@ function ProfileView({ farm }) {
 
 function EditProfileModal({ draft, errors, submitError, onChange, onSubmit, onClose, saving }) {
   return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-dialog">
-        <div className="modal-header">
-          <div>
-            <p className="modal-eyebrow field-label">Farm Profile</p>
-            <h3>Edit profile</h3>
-          </div>
-          <button type="button" className="secondary-button" onClick={onClose}
-            style={{ padding: 0, width: "32px", height: "32px", borderRadius: "999px", fontSize: "1.1rem", lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            ×
-          </button>
-        </div>
-
+    <ModalBase
+      isOpen={true}
+      isBlocking={saving}
+      onClose={onClose}
+      eyebrow="Farm Profile"
+      title="Edit profile"
+    >
         <form className="form-grid" onSubmit={onSubmit}>
           <label className="field-group">
             <span className="field-label">Farm name</span>
@@ -116,8 +115,7 @@ function EditProfileModal({ draft, errors, submitError, onChange, onSubmit, onCl
             <button type="button" className="secondary-button" onClick={onClose}>Cancel</button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalBase>
   );
 }
 
@@ -128,20 +126,18 @@ function EditProfileModal({ draft, errors, submitError, onChange, onSubmit, onCl
 export default function FarmProfilePage() {
   const queryClient = useQueryClient();
   const { trialDaysLeft } = useAuth();
-
-  const farmsQuery = useQuery({ queryKey: queryKeys.farms.all(), queryFn: api.getFarms });
-  const farmId = farmsQuery.data?.[0]?.id;
+  const { currentFarm, currentFarmId, farmsQuery } = useCurrentFarm();
 
   const farmQuery = useQuery({
-    queryKey: queryKeys.farms.detail(farmId),
-    queryFn: () => api.getFarm(farmId),
-    enabled: !!farmId,
+    queryKey: queryKeys.farms.detail(currentFarmId),
+    queryFn: () => api.getFarm(currentFarmId),
+    enabled: Boolean(currentFarmId),
   });
 
   const suppliersQuery = useQuery({
-    queryKey: queryKeys.suppliers(farmId),
-    queryFn: () => api.getSuppliers(farmId),
-    enabled: !!farmId,
+    queryKey: queryKeys.suppliers(currentFarmId),
+    queryFn: () => api.getSuppliers(currentFarmId),
+    enabled: Boolean(currentFarmId),
   });
 
   const productsQuery = useQuery({
@@ -155,26 +151,37 @@ export default function FarmProfilePage() {
   });
 
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(null);
-  const [errors, setErrors] = useState({});
-  const [submitError, setSubmitError] = useState("");
+  const {
+    draft,
+    errors,
+    submitError,
+    setErrors,
+    setSubmitError,
+    syncDraft,
+    updateField,
+    validate,
+    getPayload,
+  } = useFarmProfileForm(farmQuery.data || currentFarm || null);
 
   // null = closed, false = add mode, supplier object = edit mode
   const [supplierModal, setSupplierModal] = useState(null);
   const [supplierError, setSupplierError] = useState("");
 
   useEffect(() => {
-    if (farmQuery.data) setDraft(farmQuery.data);
-  }, [farmQuery.data]);
+    if (farmQuery.data && !editing) {
+      syncDraft(farmQuery.data);
+    }
+  }, [editing, farmQuery.data, syncDraft]);
 
   /* profile mutations */
   const updateMutation = useMutation({
-    mutationFn: (payload) => api.updateFarm(farmId, payload),
+    mutationFn: (payload) => api.updateFarm(currentFarmId, payload),
     onSuccess: () => {
       setSubmitError("");
       setErrors({});
       setEditing(false);
-      queryClient.invalidateQueries({ queryKey: queryKeys.farms.detail(farmId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.farms.detail(currentFarmId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.farms.all() });
     },
     onError: (err) => setSubmitError(err.message || "Unable to save farm profile"),
   });
@@ -182,58 +189,107 @@ export default function FarmProfilePage() {
   /* supplier mutations */
   const createSupplierMutation = useMutation({
     mutationFn: async ({ product_ids, ...data }) => {
-      const supplier = await api.createSupplier(farmId, data);
+      const supplier = await api.createSupplier(currentFarmId, data);
       if (product_ids?.length) {
-        await api.setSupplierProducts(farmId, supplier.id, product_ids);
+        await api.setSupplierProducts(currentFarmId, supplier.id, product_ids);
       }
       return supplier;
     },
     onSuccess: () => {
       setSupplierModal(null);
       setSupplierError("");
-      queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(farmId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(currentFarmId) });
     },
     onError: (err) => setSupplierError(err.message || "Failed to add supplier"),
   });
 
   const updateSupplierMutation = useMutation({
     mutationFn: async ({ id, product_ids, ...data }) => {
-      await api.updateSupplier(farmId, id, data);
-      await api.setSupplierProducts(farmId, id, product_ids || []);
+      await api.updateSupplier(currentFarmId, id, data);
+      await api.setSupplierProducts(currentFarmId, id, product_ids || []);
     },
     onSuccess: () => {
       setSupplierModal(null);
       setSupplierError("");
-      queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(farmId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(currentFarmId) });
     },
     onError: (err) => setSupplierError(err.message || "Failed to update supplier"),
   });
 
   const deleteSupplierMutation = useMutation({
-    mutationFn: (supplierId) => api.deleteSupplier(farmId, supplierId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(farmId) }),
+    mutationFn: (supplierId) => api.deleteSupplier(currentFarmId, supplierId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(currentFarmId) }),
   });
 
-  if (!draft) return <section className="panel">Loading farm profile…</section>;
-
-  function handleFieldChange(e) {
-    const { name, value } = e.target;
-    setDraft((d) => ({ ...d, [name]: value }));
-    setErrors((d) => ({ ...d, [name]: "" }));
-    setSubmitError("");
+  if (farmsQuery.isLoading) {
+    return (
+      <PageState
+        title="Loading farm context"
+        message="We are working out which farm profile to show."
+      />
+    );
   }
 
-  function validate() {
-    const e = {};
-    if (!draft.name?.trim() || draft.name.trim().length < 2) e.name = "Farm name must be at least 2 characters";
-    if (!draft.region?.trim() || draft.region.trim().length < 2) e.region = "Region must be at least 2 characters";
-    if (!draft.farm_type) e.farm_type = "Farm type is required";
-    if (!draft.herd_size || Number(draft.herd_size) <= 0) e.herd_size = "Herd size must be greater than 0";
-    if (!draft.land_area_ha || Number(draft.land_area_ha) <= 0) e.land_area_ha = "Land area must be greater than 0";
-    if (draft.whatsapp_number?.trim().length > 0 && draft.whatsapp_number.trim().length < 8)
-      e.whatsapp_number = "FarmStock bot contact looks too short";
-    if (draft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email)) e.email = "Enter a valid email address";
-    return e;
+  if (farmsQuery.isError) {
+    return (
+      <PageState
+        tone="error"
+        title="Unable to load farms"
+        message={farmsQuery.error?.message || "We could not load your farms."}
+        actionLabel="Try again"
+        onAction={() => farmsQuery.refetch()}
+      />
+    );
+  }
+
+  if (!currentFarm) {
+    return (
+      <PageState
+        title="No farms yet"
+        message="Create or connect a farm before managing profile and suppliers."
+      />
+    );
+  }
+
+  if (farmQuery.isLoading || suppliersQuery.isLoading || productsQuery.isLoading || subStatusQuery.isLoading) {
+    return (
+      <PageState
+        title="Loading farm profile"
+        message={`Fetching profile, supplier, and subscription data for ${currentFarm.name}.`}
+      />
+    );
+  }
+
+  if (farmQuery.isError || suppliersQuery.isError || productsQuery.isError || subStatusQuery.isError) {
+    return (
+      <PageState
+        tone="error"
+        title="Farm profile could not be loaded"
+        message={
+          farmQuery.error?.message ||
+          suppliersQuery.error?.message ||
+          productsQuery.error?.message ||
+          subStatusQuery.error?.message ||
+          "Something went wrong while loading this farm."
+        }
+        actionLabel="Try again"
+        onAction={() => {
+          farmQuery.refetch();
+          suppliersQuery.refetch();
+          productsQuery.refetch();
+          subStatusQuery.refetch();
+        }}
+      />
+    );
+  }
+
+  if (!draft) {
+    return (
+      <PageState
+        title="No farm profile found"
+        message="This farm does not have a profile record yet."
+      />
+    );
   }
 
   function handleSubmit(e) {
@@ -241,19 +297,11 @@ export default function FarmProfilePage() {
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-    updateMutation.mutate({
-      name: draft.name,
-      region: draft.region,
-      farm_type: draft.farm_type,
-      herd_size: Number(draft.herd_size),
-      land_area_ha: Number(draft.land_area_ha),
-      whatsapp_number: draft.whatsapp_number,
-      email: draft.email,
-    });
+    updateMutation.mutate(getPayload());
   }
 
   function handleCancelEdit() {
-    setDraft(farmQuery.data);
+    syncDraft(farmQuery.data);
     setErrors({});
     setSubmitError("");
     setEditing(false);
@@ -271,12 +319,11 @@ export default function FarmProfilePage() {
           trialDaysLeft={trialDaysLeft}
         />
 
-        <div className="panel-header" style={{ marginTop: "1.25rem" }}>
+        <div className="panel-header panel-header-offset">
           <h3>Farm Profile</h3>
           <button
             type="button"
-            className="secondary-button"
-            style={{ fontSize: "0.825rem", padding: "0.35rem 0.85rem" }}
+            className="secondary-button panel-action-button"
             onClick={() => setEditing(true)}
           >
             Edit profile
@@ -292,8 +339,7 @@ export default function FarmProfilePage() {
           <h3>Preferred Suppliers</h3>
           <button
             type="button"
-            className="secondary-button"
-            style={{ fontSize: "0.825rem", padding: "0.35rem 0.85rem" }}
+            className="secondary-button panel-action-button"
             onClick={() => { setSupplierModal(false); setSupplierError(""); }}
           >
             + Add
@@ -301,28 +347,26 @@ export default function FarmProfilePage() {
         </div>
 
         {suppliers.length === 0 ? (
-          <p className="muted" style={{ fontSize: "0.875rem" }}>
+          <p className="muted supplier-empty-copy">
             No suppliers yet. Add your first preferred supplier.
           </p>
         ) : (
           <div className="stack">
             {suppliers.map((s) => (
               <article key={s.id} className="supplier-card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
+                <div className="supplier-card-header">
                   <h4>{s.name}</h4>
-                  <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+                  <div className="supplier-card-actions">
                     <button
                       type="button"
                       className="ghost-button"
-                      style={{ fontSize: "0.8rem" }}
                       onClick={() => { setSupplierModal(s); setSupplierError(""); }}
                     >
                       Edit
                     </button>
                     <button
                       type="button"
-                      className="ghost-button"
-                      style={{ fontSize: "0.8rem", color: "var(--red)" }}
+                      className="ghost-button supplier-remove-button"
                       onClick={() => deleteSupplierMutation.mutate(s.id)}
                       disabled={deleteSupplierMutation.isPending}
                     >
@@ -330,17 +374,17 @@ export default function FarmProfilePage() {
                     </button>
                   </div>
                 </div>
-                {s.contact_name && <p className="muted" style={{ fontSize: "0.85rem", margin: "0.2rem 0 0" }}>{s.contact_name}</p>}
-                {s.contact_email && <p className="muted" style={{ fontSize: "0.85rem", margin: "0.15rem 0 0" }}>{s.contact_email}</p>}
+                {s.contact_name && <p className="muted supplier-contact-copy">{s.contact_name}</p>}
+                {s.contact_email && <p className="muted supplier-contact-copy supplier-contact-email">{s.contact_email}</p>}
                 {(s.categories || []).length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginTop: "0.5rem" }}>
+                  <div className="supplier-category-row">
                     {s.categories.map((c) => (
-                      <span key={c} className="pill pill-green" style={{ fontSize: "0.72rem" }}>{c}</span>
+                      <span key={c} className="pill pill-green supplier-category-pill">{c}</span>
                     ))}
                   </div>
                 )}
                 {(s.product_ids || []).length > 0 && (
-                  <p className="muted" style={{ fontSize: "0.8rem", margin: "0.4rem 0 0" }}>
+                  <p className="muted supplier-linked-copy">
                     {s.product_ids.length} product{s.product_ids.length !== 1 ? "s" : ""} linked
                   </p>
                 )}
@@ -356,7 +400,7 @@ export default function FarmProfilePage() {
           draft={draft}
           errors={errors}
           submitError={submitError}
-          onChange={handleFieldChange}
+          onChange={updateField}
           onSubmit={handleSubmit}
           onClose={handleCancelEdit}
           saving={updateMutation.isPending}

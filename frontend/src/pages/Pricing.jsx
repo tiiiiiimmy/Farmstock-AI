@@ -72,7 +72,7 @@ export default function Pricing() {
               <ul className="pricing-features">
                 {plan.features.map((f) => (
                   <li key={f} className="pricing-feature">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: 'var(--brand)' }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="pricing-check-icon">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                     {f}
@@ -81,10 +81,9 @@ export default function Pricing() {
               </ul>
 
               <button
-                className={plan.badge ? '' : 'secondary-button'}
+                className={`${plan.badge ? '' : 'secondary-button'} pricing-submit`}
                 onClick={() => handleSubscribe(plan.id)}
                 disabled={loading === plan.id}
-                style={{ width: '100%' }}
               >
                 {loading === plan.id ? 'Loading…' : 'Subscribe'}
               </button>

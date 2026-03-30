@@ -1,9 +1,11 @@
+import { Suspense, lazy } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import FarmSwitcher from "./FarmSwitcher";
-import FloatingChat from "./FloatingChat";
 import { MobileNav, SidebarNav } from "./ShellNavigation";
 import TrialBanner from "./TrialBanner";
+
+const FloatingChat = lazy(() => import("./FloatingChat"));
 
 export default function Layout() {
   const { logout } = useAuth();
@@ -44,7 +46,9 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <FloatingChat />
+      <Suspense fallback={null}>
+        <FloatingChat />
+      </Suspense>
       <MobileNav />
     </div>
   );

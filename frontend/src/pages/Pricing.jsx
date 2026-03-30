@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../context/AuthContext'
+import { formatDaysLabel } from '../utils/formatters'
 
 const plans = [
   {
@@ -49,7 +50,7 @@ export default function Pricing() {
           <p className="pricing-subtitle">Everything you need to manage your farm supply intelligently.</p>
           {isTrialing && (
             <div className="pricing-trial-badge">
-              {trialDaysLeft} days left in your free trial
+              {formatDaysLabel(trialDaysLeft)} left in your free trial
             </div>
           )}
           {error && <p className="pricing-error">{error}</p>}

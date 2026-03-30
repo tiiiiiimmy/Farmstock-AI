@@ -41,7 +41,7 @@ export default function Register() {
         <h1 className="auth-title">Start free trial</h1>
         <p className="auth-subtitle">14 days free — no credit card required</p>
 
-        {error && <p className="form-error-banner" style={{ marginBottom: '1rem' }}>{error}</p>}
+        {error && <p className="form-error-banner auth-error-banner">{error}</p>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {fields.map(({ key, label, type, placeholder }) => (

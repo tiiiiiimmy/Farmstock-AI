@@ -1,46 +1,75 @@
-import { createContext, useContext, useState } from 'react'
-import { authApi } from '../api/client'
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { authApi } from "../api/client";
+import { formatDaysLabel } from "../utils/formatters";
 
-const AuthContext = createContext(null)
+const AuthContext = createContext(null);
 
 function clearLocalAuth() {
-  localStorage.removeItem('farmstock_token')
-  localStorage.removeItem('farmstock_user')
+  localStorage.removeItem("farmstock_token");
+  localStorage.removeItem("farmstock_user");
 }
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('farmstock_token'))
+  const [token, setToken] = useState(() => localStorage.getItem("farmstock_token"));
   const [user, setUser] = useState(() => {
-    const u = localStorage.getItem('farmstock_user')
-    return u ? JSON.parse(u) : null
-  })
+    const storedUser = localStorage.getItem("farmstock_user");
+    if (!storedUser) {
+      return null;
+    }
 
-  const login = (tokenValue, userData) => {
-    localStorage.setItem('farmstock_token', tokenValue)
-    localStorage.setItem('farmstock_user', JSON.stringify(userData))
-    setToken(tokenValue)
-    setUser(userData)
-  }
+    try {
+      return JSON.parse(storedUser);
+    } catch {
+      clearLocalAuth();
+      return null;
+    }
+  });
 
-  const logout = async () => {
-    // Best-effort server notification — don't block on failure
-    try { await authApi.logout() } catch {}
-    clearLocalAuth()
-    setToken(null)
-    setUser(null)
-    window.location.href = '/login'
-  }
+  const login = useCallback((tokenValue, userData) => {
+    localStorage.setItem("farmstock_token", tokenValue);
+    localStorage.setItem("farmstock_user", JSON.stringify(userData));
+    setToken(tokenValue);
+    setUser(userData);
+  }, []);
 
-  const isTrialing = user?.subscription_status === 'trialing'
+  const clearSession = useCallback(() => {
+    clearLocalAuth();
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {}
+
+    clearSession();
+  }, [clearSession]);
+
+  const isTrialing = user?.subscription_status === "trialing";
   const trialDaysLeft = user?.trial_ends_at
     ? Math.max(0, Math.ceil((new Date(user.trial_ends_at) - new Date()) / 86400000))
-    : 0
+    : 0;
+
+  const value = useMemo(
+    () => ({
+      token,
+      user,
+      login,
+      logout,
+      clearSession,
+      isTrialing,
+      trialDaysLeft,
+      trialDaysLabel: formatDaysLabel(trialDaysLeft),
+    }),
+    [token, user, login, logout, clearSession, isTrialing, trialDaysLeft]
+  );
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, isTrialing, trialDaysLeft }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => useContext(AuthContext);

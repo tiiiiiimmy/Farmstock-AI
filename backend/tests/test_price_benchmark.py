@@ -107,6 +107,28 @@ def test_compute_benchmark_trend_ordered_by_date():
     assert result["your_latest_price"] == 0.90
 
 
+def test_compute_benchmark_avg_uses_latest_price_per_farm():
+    from backend.routers.price_benchmark import compute_benchmark
+    conn = get_test_db()
+    # farm-a has two historical orders; only the latest (0.70) should count
+    _seed(conn,
+        farms=[("farm-a", "Waikato"), ("farm-b", "Waikato"), ("farm-c", "Waikato")],
+        orders=[
+            ("farm-a", "Mixed Grain", 0.90, "2025-01-01", "kg"),  # old order, should be ignored
+            ("farm-a", "Mixed Grain", 0.70, "2026-01-01", "kg"),  # latest for farm-a
+            ("farm-b", "Mixed Grain", 1.00, "2026-01-01", "kg"),
+            ("farm-c", "Mixed Grain", 0.60, "2026-01-01", "kg"),
+        ]
+    )
+    result = compute_benchmark(conn, "farm-a", "Waikato", "Mixed Grain")
+    # latest prices: farm-a=0.70, farm-b=1.00, farm-c=0.60
+    # avg = (0.70 + 1.00 + 0.60) / 3 = 0.7667
+    assert result["data_available"] is True
+    assert abs(result["regional_avg"] - 0.7667) < 0.01
+    assert abs(result["regional_min"] - 0.60) < 0.01
+    assert abs(result["regional_max"] - 1.00) < 0.01
+
+
 def test_compute_benchmark_no_region_returns_unavailable():
     from backend.routers.price_benchmark import compute_benchmark
     conn = get_test_db()

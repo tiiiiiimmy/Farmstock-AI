@@ -170,8 +170,7 @@ export default function ProductsPage() {
           {/* Row 1: search + supplier dropdown */}
           <div className="filter-row">
             <input
-              className="search"
-              style={{ flex: 1 }}
+              className="search filter-search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search products"
@@ -192,7 +191,7 @@ export default function ProductsPage() {
 
           {/* Row 2: category tags + zone tags */}
           <div className="filter-row">
-            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", flex: 1 }}>
+            <div className="filter-tag-group">
               <button
                 type="button"
                 className={`tag-btn${selectedCategories.size === 0 ? " active" : ""}`}
@@ -211,7 +210,7 @@ export default function ProductsPage() {
                 </button>
               ))}
             </div>
-            <div style={{ display: "flex", gap: "0.4rem" }}>
+            <div className="filter-zone-group">
               {ZONES.map((zone) => (
                 <button
                   key={zone}
@@ -250,10 +249,7 @@ export default function ProductsPage() {
 
         {/* ── Product grid or empty state ────────────────────── */}
         {products.length === 0 ? (
-          <div
-            className="muted"
-            style={{ padding: "2rem 0", textAlign: "center", fontSize: "0.875rem" }}
-          >
+          <div className="muted products-empty-copy">
             No products match your filters.{" "}
             {hasFilters && (
               <button type="button" className="btn-ghost" onClick={clearAll}>

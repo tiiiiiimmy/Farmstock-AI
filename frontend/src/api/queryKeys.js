@@ -15,4 +15,5 @@ export const queryKeys = {
   },
   subscription: () => ["subscription"],
   suppliers: (farmId) => ["suppliers", farmId],
+  priceBenchmark: (productName, supplierId) => ["price-benchmark", productName, supplierId ?? null],
 };

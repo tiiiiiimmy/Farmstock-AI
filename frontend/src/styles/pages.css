@@ -198,6 +198,10 @@
   align-items: stretch;
 }
 
+.alerts-empty-copy {
+  font-size: 0.875rem;
+}
+
 .panel-header-offset {
   margin-top: 1.25rem;
 }
@@ -279,6 +283,29 @@
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.filter-search {
+  flex: 1;
+}
+
+.filter-search,
+.supplier-select {
+  min-height: 44px;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.875rem;
+}
+
+.filter-tag-group {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.filter-zone-group {
+  display: flex;
+  gap: 0.4rem;
 }
 
 .tag-btn {
@@ -386,12 +413,16 @@
   color: var(--ink);
 }
 
+.products-empty-copy {
+  padding: 2rem 0;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
 /* ─── Supplier select (filter row, fixed width) ─────────────── */
 .supplier-select {
   width: 180px;
   flex-shrink: 0;
-  padding: 0.5rem 0.85rem;
-  font-size: 0.82rem;
 }
 
 /* ─── Chat ─────────────────────────────────────────────────── */

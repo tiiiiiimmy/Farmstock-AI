@@ -3,6 +3,8 @@ import { api } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import InventoryChart from "../components/InventoryChart";
 import MetricCard from "../components/MetricCard";
+import PageState from "../components/PageState";
+import { formatCompactCurrencyNzd, formatEnumLabel, formatPercent } from "../utils/formatters";
 
 export default function DashboardPage() {
   const predictionsQuery = useQuery({
@@ -17,6 +19,41 @@ export default function DashboardPage() {
     queryKey: queryKeys.spending.period("year"),
     queryFn: () => api.getSpending("period=year")
   });
+
+  const isLoading =
+    predictionsQuery.isLoading || alertsQuery.isLoading || spendingQuery.isLoading;
+  const hasError =
+    predictionsQuery.isError || alertsQuery.isError || spendingQuery.isError;
+
+  if (isLoading) {
+    return (
+      <PageState
+        title="Loading dashboard"
+        message="We are pulling your latest inventory predictions, alerts, and spend data."
+      />
+    );
+  }
+
+  if (hasError) {
+    return (
+      <PageState
+        tone="error"
+        title="Dashboard data is unavailable"
+        message={
+          predictionsQuery.error?.message ||
+          alertsQuery.error?.message ||
+          spendingQuery.error?.message ||
+          "Something went wrong while loading the dashboard."
+        }
+        actionLabel="Try again"
+        onAction={() => {
+          predictionsQuery.refetch();
+          alertsQuery.refetch();
+          spendingQuery.refetch();
+        }}
+      />
+    );
+  }
 
   const predictions = predictionsQuery.data || [];
   const urgent = predictions.filter((item) => item.reorder_now);
@@ -41,12 +78,12 @@ export default function DashboardPage() {
         />
         <MetricCard
           label="Average stock"
-          value={`${averageStockPct}%`}
+          value={formatPercent(averageStockPct)}
           hint="Across simulated inventory snapshots"
         />
         <MetricCard
           label="YTD spend"
-          value={`$${((spendingQuery.data?.total_spend || 0) / 1000).toFixed(1)}k`}
+          value={formatCompactCurrencyNzd(spendingQuery.data?.total_spend)}
           hint="Year-to-date NZD"
         />
       </section>
@@ -63,7 +100,7 @@ export default function DashboardPage() {
             <article key={alert.id} className="alert-card">
               <div className="alert-meta">
                 <span className={`pill pill-${alert.status}`}>{alert.status}</span>
-                <span>{alert.type.replace("_", " ")}</span>
+                <span>{formatEnumLabel(alert.type)}</span>
               </div>
               <h4>{alert.title}</h4>
               <p>{alert.message}</p>

@@ -65,8 +65,7 @@ export default function ChatWidget() {
         {thread.length > 1 && (
           <button
             type="button"
-            className="secondary-button"
-            style={{ fontSize: "0.78rem", padding: "0.35rem 0.75rem" }}
+            className="secondary-button chat-clear-button"
             onClick={() => setThread(DEFAULT_THREAD)}
           >
             Clear

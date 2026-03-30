@@ -5,41 +5,42 @@ import { queryKeys } from "../api/queryKeys";
 import ConfirmDialog from "../components/ConfirmDialog";
 import OrderFormModal from "../components/OrderFormModal";
 import OrderTable from "../components/OrderTable";
-
-const emptyOrder = {
-  date: new Date().toISOString().slice(0, 10),
-  product_name: "",
-  category: "feed",
-  quantity: 1,
-  unit: "units",
-  unit_price: 0,
-  total_price: 0,
-  supplier_id: "",
-  notes: ""
-};
+import PageState from "../components/PageState";
+import { useCurrentFarm } from "../context/CurrentFarmContext";
+import useOrderForm from "../hooks/useOrderForm";
 
 export default function OrdersPage() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [draft, setDraft] = useState(emptyOrder);
-  const [editingOrderId, setEditingOrderId] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
-  const [unitMode, setUnitMode] = useState("preset");
-  const [errors, setErrors] = useState({});
-  const [submitError, setSubmitError] = useState("");
+  const {
+    draft,
+    editingOrderId,
+    unitMode,
+    errors,
+    submitError,
+    setSubmitError,
+    setErrors,
+    resetFormState,
+    updateField,
+    handleUnitSelect,
+    validateDraft,
+    getPayload,
+    handleEdit,
+  } = useOrderForm();
+  const { currentFarm, currentFarmId, farmsQuery } = useCurrentFarm();
   const ordersQuery = useQuery({
     queryKey: queryKeys.orders.all(),
     queryFn: api.getOrders
   });
 
-  const farmsQuery = useQuery({ queryKey: queryKeys.farms.all(), queryFn: api.getFarms });
-  const farmId = farmsQuery.data?.[0]?.id;
   const suppliersQuery = useQuery({
-    queryKey: queryKeys.suppliers(farmId),
-    queryFn: () => api.getSuppliers(farmId),
-    enabled: !!farmId,
+    queryKey: queryKeys.suppliers(currentFarmId),
+    queryFn: () => api.getSuppliers(currentFarmId),
+    enabled: Boolean(currentFarmId),
   });
   const suppliers = suppliersQuery.data || [];
+  const suppliersById = Object.fromEntries(suppliers.map((supplier) => [supplier.id, supplier]));
 
   const createMutation = useMutation({
     mutationFn: (payload) => api.createOrder(payload),
@@ -77,14 +78,6 @@ export default function OrdersPage() {
     }
   });
 
-  function resetFormState() {
-    setDraft(emptyOrder);
-    setEditingOrderId(null);
-    setUnitMode("preset");
-    setErrors({});
-    setSubmitError("");
-  }
-
   function handleOpenCreate() {
     resetFormState();
     setIsModalOpen(true);
@@ -111,55 +104,6 @@ export default function OrdersPage() {
     deleteMutation.mutate(pendingDeleteId);
   }
 
-  function updateField(event) {
-    const { name, value } = event.target;
-    setDraft((current) => ({ ...current, [name]: value }));
-    setErrors((current) => ({ ...current, [name]: "" }));
-    setSubmitError("");
-  }
-
-  function handleUnitSelect(event) {
-    const { value } = event.target;
-    if (value === "Custom...") {
-      setUnitMode("custom");
-      setDraft((current) => ({ ...current, unit: "" }));
-      return;
-    }
-
-    setUnitMode("preset");
-    setDraft((current) => ({ ...current, unit: value }));
-    setErrors((current) => ({ ...current, unit: "" }));
-  }
-
-  function validateDraft() {
-    const nextErrors = {};
-    if (!draft.date) {
-      nextErrors.date = "Purchase date is required";
-    }
-    if (!draft.product_name.trim()) {
-      nextErrors.product_name = "Product name is required";
-    }
-    if (!draft.category) {
-      nextErrors.category = "Category is required";
-    }
-    if (!draft.quantity || Number(draft.quantity) <= 0) {
-      nextErrors.quantity = "Quantity must be greater than 0";
-    }
-    if (!draft.unit.trim()) {
-      nextErrors.unit = "Unit is required";
-    }
-    if (draft.unit_price === "" || Number(draft.unit_price) < 0) {
-      nextErrors.unit_price = "Unit price cannot be negative";
-    }
-    if (draft.supplier_id && draft.supplier_id.trim().length < 3) {
-      nextErrors.supplier_id = "Supplier ID must be at least 3 characters";
-    }
-    if (draft.notes && draft.notes.length > 500) {
-      nextErrors.notes = "Notes must be 500 characters or fewer";
-    }
-    return nextErrors;
-  }
-
   function handleSubmit(event) {
     event.preventDefault();
     const nextErrors = validateDraft();
@@ -168,14 +112,7 @@ export default function OrdersPage() {
       return;
     }
 
-    const quantity = Number(draft.quantity);
-    const unitPrice = Number(draft.unit_price);
-    const payload = {
-      ...draft,
-      quantity,
-      unit_price: unitPrice,
-      total_price: Number((quantity * unitPrice).toFixed(2))
-    };
+    const payload = getPayload();
 
     if (editingOrderId) {
       updateMutation.mutate({ orderId: editingOrderId, payload });
@@ -185,25 +122,67 @@ export default function OrdersPage() {
     createMutation.mutate(payload);
   }
 
-  function handleEdit(order) {
-    const presetUnits = ["kg", "L", "tonnes", "units", "mL"];
-    const isPresetUnit = presetUnits.includes(order.unit);
-    setUnitMode(isPresetUnit ? "preset" : "custom");
-    setEditingOrderId(order.id);
-    setDraft({
-      date: order.date,
-      product_name: order.product_name,
-      category: order.category,
-      quantity: order.quantity,
-      unit: order.unit,
-      unit_price: order.unit_price || 0,
-      total_price: order.total_price || 0,
-      supplier_id: order.supplier_id || "",
-      notes: order.notes || ""
-    });
-    setErrors({});
-    setSubmitError("");
+  function handleStartEdit(order) {
+    handleEdit(order);
     setIsModalOpen(true);
+  }
+
+  if (farmsQuery.isLoading) {
+    return (
+      <PageState
+        title="Loading farm context"
+        message="We are working out which farm to use for order history."
+      />
+    );
+  }
+
+  if (farmsQuery.isError) {
+    return (
+      <PageState
+        tone="error"
+        title="Unable to load farms"
+        message={farmsQuery.error?.message || "We could not load your farms."}
+        actionLabel="Try again"
+        onAction={() => farmsQuery.refetch()}
+      />
+    );
+  }
+
+  if (!currentFarm) {
+    return (
+      <PageState
+        title="No farms yet"
+        message="Create or connect a farm before recording purchases."
+      />
+    );
+  }
+
+  if (ordersQuery.isLoading || suppliersQuery.isLoading) {
+    return (
+      <PageState
+        title="Loading orders"
+        message={`Fetching purchase history for ${currentFarm.name}.`}
+      />
+    );
+  }
+
+  if (ordersQuery.isError || suppliersQuery.isError) {
+    return (
+      <PageState
+        tone="error"
+        title="Orders could not be loaded"
+        message={
+          ordersQuery.error?.message ||
+          suppliersQuery.error?.message ||
+          "Something went wrong while loading order history."
+        }
+        actionLabel="Try again"
+        onAction={() => {
+          ordersQuery.refetch();
+          suppliersQuery.refetch();
+        }}
+      />
+    );
   }
 
   return (
@@ -212,8 +191,9 @@ export default function OrdersPage() {
         <OrderTable
           orders={ordersQuery.data || []}
           editingOrderId={editingOrderId}
+          suppliersById={suppliersById}
           onCreate={handleOpenCreate}
-          onEdit={handleEdit}
+          onEdit={handleStartEdit}
           onDelete={handleRequestDelete}
         />
       </div>
@@ -227,6 +207,7 @@ export default function OrdersPage() {
         unitMode={unitMode}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
         suppliers={suppliers}
+        hasSupplierDirectory={suppliers.length > 0}
         onClose={handleCloseModal}
         onFieldChange={updateField}
         onUnitSelect={handleUnitSelect}

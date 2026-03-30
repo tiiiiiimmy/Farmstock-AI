@@ -1,10 +1,12 @@
+import { Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
-import InventoryChart from "../components/InventoryChart";
 import MetricCard from "../components/MetricCard";
 import PageState from "../components/PageState";
 import { formatCompactCurrencyNzd, formatEnumLabel, formatPercent } from "../utils/formatters";
+
+const InventoryChart = lazy(() => import("../components/InventoryChart"));
 
 export default function DashboardPage() {
   const predictionsQuery = useQuery({
@@ -88,14 +90,24 @@ export default function DashboardPage() {
         />
       </section>
 
-      <InventoryChart data={predictions} />
+      <Suspense
+        fallback={
+          <PageState
+            compact
+            title="Loading chart"
+            message="Preparing the inventory coverage view."
+          />
+        }
+      >
+        <InventoryChart data={predictions} />
+      </Suspense>
 
       <section className="panel">
         <div className="panel-header">
           <h3>AI Alerts</h3>
         </div>
         <div className="alert-list">
-          {alerts.length === 0 && <p className="muted" style={{ fontSize: "0.875rem" }}>No alerts right now.</p>}
+          {alerts.length === 0 && <p className="muted alerts-empty-copy">No alerts right now.</p>}
           {alerts.map((alert) => (
             <article key={alert.id} className="alert-card">
               <div className="alert-meta">

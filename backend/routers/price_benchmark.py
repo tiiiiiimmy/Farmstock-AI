@@ -61,6 +61,8 @@ def compute_benchmark(conn, farm_id: str, farm_region: Optional[str], product_na
         return base
 
     # --- Cross-farm regional aggregates ---
+    # Intentionally not filtered by supplier_id: filtering by supplier would
+    # fragment the pool and risk re-identification of small farms.
     regional_rows = conn.execute("""
         SELECT o.farm_id, o.unit_price, o.date
         FROM orders o
@@ -82,20 +84,18 @@ def compute_benchmark(conn, farm_id: str, farm_region: Optional[str], product_na
         base["farm_count"] = farm_count
         return base
 
-    # Aggregates across all matching rows
-    prices = [r["unit_price"] for r in regional_rows]
-    regional_avg = round(sum(prices) / len(prices), 4)
-    regional_min = round(min(prices), 4)
-    regional_max = round(max(prices), 4)
-
-    # Latest price per farm (for percentile calculation)
-    seen: set = set()
+    # Latest price per farm (one entry per farm, used for all aggregates)
     latest_by_farm: dict = {}
     for r in regional_rows:
         fid = r["farm_id"]
-        if fid not in seen:
+        if fid not in latest_by_farm:
             latest_by_farm[fid] = r["unit_price"]
-            seen.add(fid)
+
+    # Aggregates using latest price per farm (not all historical rows)
+    latest_prices = list(latest_by_farm.values())
+    regional_avg = round(sum(latest_prices) / len(latest_prices), 4)
+    regional_min = round(min(latest_prices), 4)
+    regional_max = round(max(latest_prices), 4)
 
     # Percentile: % of OTHER farms whose latest price is higher than yours
     your_percentile = None

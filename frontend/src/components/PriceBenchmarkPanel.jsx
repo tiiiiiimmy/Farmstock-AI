@@ -99,6 +99,12 @@ export default function PriceBenchmarkPanel({ orders = [], suppliers = [] }) {
         <p className="benchmark-no-data">Loading benchmark data…</p>
       )}
 
+      {benchmarkQuery.isError && (
+        <p className="benchmark-no-data">
+          Could not load benchmark data — please try again.
+        </p>
+      )}
+
       {data && (
         <>
           <section className="metrics-grid">
@@ -110,6 +116,7 @@ export default function PriceBenchmarkPanel({ orders = [], suppliers = [] }) {
             <MetricCard
               label="Regional min"
               value={data.data_available ? formatCurrencyNzd(data.regional_min) : "—"}
+              tone={data.data_available ? "neutral" : "neutral"}
             />
             <MetricCard
               label="Regional max"

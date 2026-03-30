@@ -6,6 +6,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import OrderFormModal from "../components/OrderFormModal";
 import OrderTable from "../components/OrderTable";
 import PageState from "../components/PageState";
+import PriceBenchmarkPanel from "../components/PriceBenchmarkPanel";
 import { useCurrentFarm } from "../context/CurrentFarmContext";
 import useOrderForm from "../hooks/useOrderForm";
 
@@ -188,6 +189,10 @@ export default function OrdersPage() {
   return (
     <>
       <div className="page-grid">
+        <PriceBenchmarkPanel
+          orders={ordersQuery.data || []}
+          suppliers={suppliers}
+        />
         <OrderTable
           orders={ordersQuery.data || []}
           editingOrderId={editingOrderId}

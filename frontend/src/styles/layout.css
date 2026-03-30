@@ -26,6 +26,24 @@
   padding: 0.25rem 0.5rem 1.75rem;
 }
 
+.farm-switcher {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0 0.5rem 1rem;
+}
+
+.farm-switcher-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.farm-switcher-select {
+  padding: 0.65rem 0.85rem;
+}
+
 .brand-logo {
   display: block;
   width: min(180px, 100%);
@@ -146,6 +164,12 @@
   display: none;
 }
 
+.mobile-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 /* ─── Bottom nav (mobile only) ─────────────────────────────── */
 
 .bottom-nav {
@@ -196,6 +220,15 @@
     color: var(--ink-3);
     text-transform: uppercase;
     letter-spacing: 0.1em;
+  }
+
+  .mobile-topbar .farm-switcher {
+    padding: 0;
+    min-width: 132px;
+  }
+
+  .mobile-topbar .farm-switcher-label {
+    display: none;
   }
 
   /* ── Bottom Navigation Bar ─── */

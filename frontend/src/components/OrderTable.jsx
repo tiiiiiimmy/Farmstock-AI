@@ -1,6 +1,14 @@
 import { useEffect, useRef } from "react";
+import { formatCurrencyNzd, formatEnumLabel } from "../utils/formatters";
 
-export default function OrderTable({ orders = [], onCreate, onDelete, onEdit, editingOrderId }) {
+export default function OrderTable({
+  orders = [],
+  onCreate,
+  onDelete,
+  onEdit,
+  editingOrderId,
+  suppliersById = {},
+}) {
   const scrollRef = useRef(null);
   const rowRefs = useRef({});
 
@@ -57,13 +65,13 @@ export default function OrderTable({ orders = [], onCreate, onDelete, onEdit, ed
               >
                 <td>{order.date}</td>
                 <td>{order.product_name}</td>
-                <td>{order.category}</td>
+                <td>{formatEnumLabel(order.category)}</td>
                 <td>
                   {order.quantity} {order.unit}
                 </td>
-                <td>NZD {Number(order.unit_price || 0).toFixed(2)}</td>
-                <td>NZD {Number(order.total_price || 0).toFixed(2)}</td>
-                <td>{order.supplier_id || "-"}</td>
+                <td>{formatCurrencyNzd(order.unit_price)}</td>
+                <td>{formatCurrencyNzd(order.total_price)}</td>
+                <td>{suppliersById[order.supplier_id]?.name || order.supplier_id || "-"}</td>
                 <td className="table-actions">
                   <button className="ghost-button ghost-button-positive" onClick={() => onEdit(order)}>
                     Edit

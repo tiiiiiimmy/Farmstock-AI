@@ -2,7 +2,7 @@
 Supply depletion prediction endpoints.
 """
 from fastapi import APIRouter, Depends
-from ..database import get_db
+from ..database import get_db, PRODUCT_ALIASES
 from ..ai.predictor import get_all_predictions
 from ..auth import get_user_farm
 
@@ -34,7 +34,10 @@ def get_predictions(farm: dict = Depends(get_user_farm)):
             JOIN products ON products.id = inventory_snapshots.product_id
             WHERE inventory_snapshots.farm_id = ?
         """, (farm_id,)).fetchall()
-        orders = [dict(r) for r in order_rows]
+        orders = [
+            {**dict(r), "product_name": PRODUCT_ALIASES.get(r["product_name"], r["product_name"])}
+            for r in order_rows
+        ]
         products = {row["name"]: dict(row) for row in product_rows}
         snapshots = {row["product_name"]: dict(row) for row in snapshot_rows}
     finally:
@@ -44,6 +47,7 @@ def get_predictions(farm: dict = Depends(get_user_farm)):
     enriched = []
     for prediction in predictions:
         product = products.get(prediction["product_name"], {})
+        prediction["product_id"] = product.get("id")
         snapshot = snapshots.get(prediction["product_name"], {})
 
         if snapshot:

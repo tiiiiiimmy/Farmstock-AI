@@ -13,8 +13,9 @@ import ModalBase from "./ModalBase";
  *  onClose       – fn
  *  onSave        – fn({ name, contact_name, contact_email, categories, product_ids })
  */
-export default function SupplierModal({ supplier, products, allSuppliers, saving, error, onClose, onSave }) {
+export default function SupplierModal({ supplier, products, allSuppliers, lockedProductIds, saving, error, onClose, onSave }) {
   const isEdit = Boolean(supplier);
+  const locked = lockedProductIds instanceof Set ? lockedProductIds : new Set(lockedProductIds || []);
 
   const [name, setName] = useState(supplier?.name || "");
   const [contactName, setContactName] = useState(supplier?.contact_name || "");
@@ -22,7 +23,11 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
   const [categories, setCategories] = useState(
     Array.isArray(supplier?.categories) ? supplier.categories.join(", ") : (supplier?.categories || "")
   );
-  const [selectedIds, setSelectedIds] = useState(new Set(supplier?.product_ids || []));
+  const [selectedIds, setSelectedIds] = useState(() => {
+    const ids = new Set(supplier?.product_ids || []);
+    for (const id of locked) ids.add(id);
+    return ids;
+  });
   const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
@@ -32,9 +37,13 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
     setCategories(
       Array.isArray(supplier?.categories) ? supplier.categories.join(", ") : (supplier?.categories || "")
     );
-    setSelectedIds(new Set(supplier?.product_ids || []));
+    setSelectedIds(() => {
+      const ids = new Set(supplier?.product_ids || []);
+      for (const id of locked) ids.add(id);
+      return ids;
+    });
     setFieldErrors({});
-  }, [supplier]);
+  }, [supplier]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Compute which product_ids already have at least one supplier (other than this one)
   const assignedElsewhere = new Set(
@@ -55,6 +64,7 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
   );
 
   function toggleProduct(id) {
+    if (locked.has(id)) return;
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -157,11 +167,12 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
                     )}
                     {items.map((p) => {
                       const isChecked = selectedIds.has(p.id);
+                      const isLocked = locked.has(p.id);
                       return (
                         <div
                           key={p.id}
-                          onClick={() => toggleProduct(p.id)}
-                          className={`supplier-product-row${isChecked ? " supplier-product-row-selected" : ""}${dim && !isChecked ? " supplier-product-row-dim" : ""}`}
+                          onClick={() => !isLocked && toggleProduct(p.id)}
+                          className={`supplier-product-row${isChecked ? " supplier-product-row-selected" : ""}${dim && !isChecked ? " supplier-product-row-dim" : ""}${isLocked ? " supplier-product-row-locked" : ""}`}
                         >
                           <span className={`supplier-product-name${isChecked ? " supplier-product-name-selected" : ""}`}>
                             {p.name}
@@ -169,9 +180,15 @@ export default function SupplierModal({ supplier, products, allSuppliers, saving
                           <span className="supplier-product-category">
                             {p.category}
                           </span>
-                          <span className={`supplier-product-icon${isChecked ? " supplier-product-icon-remove" : ""}`}>
-                            {isChecked ? "×" : "+"}
-                          </span>
+                          {isLocked ? (
+                            <span className="supplier-product-icon supplier-product-icon-locked" title="Required for this order">
+                              ⚑
+                            </span>
+                          ) : (
+                            <span className={`supplier-product-icon${isChecked ? " supplier-product-icon-remove" : ""}`}>
+                              {isChecked ? "×" : "+"}
+                            </span>
+                          )}
                         </div>
                       );
                     })}

@@ -273,14 +273,14 @@ function ModuleRichCard({ module }) {
     return (
       <div className="lp-rich-card lp-rich-card-forecast">
         <div className="lp-forecast-head">
-          <p className="lp-bento-label">Reorder forecast</p>
+          {/* <p className="lp-bento-label">Reorder forecast</p> */}
           <span className="lp-forecast-chip">AI ranked</span>
         </div>
         <div className="lp-forecast-list">
           {[
             { name: "Silage wrap", window: "Order in 6 days", tone: "amber" },
             { name: "Drench", window: "Critical this week", tone: "red" },
-            { name: "Urea", window: "Healthy for 3 weeks", tone: "green" },
+            // { name: "Urea", window: "Healthy for 3 weeks", tone: "green" },
           ].map((item) => (
             <div key={item.name} className="lp-forecast-row">
               <span className={`lp-forecast-dot lp-forecast-dot-${item.tone}`} />
@@ -323,14 +323,14 @@ function EmailForm({ onSubmit, loading, error }) {
 
   return (
     <form className="lp-email-row" onSubmit={handleSubmit}>
-      <input
+      {/* <input
         type="email"
         className="lp-email-input"
         placeholder="you@farm.com"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
-      />
+      /> */}
       <button type="submit" className="lp-cta-btn" disabled={loading}>
         {loading ? "Starting…" : "Try free for 14 days →"}
       </button>
@@ -520,9 +520,6 @@ export default function Landing() {
         <div className="lp-features-bento">
           {VALUE_BLOCKS.map(({ icon, title, body, variant }) => (
             <div key={title} className={`lp-feature-card ${variant}`}>
-              <div className="lp-feature-bg-mark" aria-hidden="true">
-                <Icon name={icon} className="lp-feature-bg-mark-svg" />
-              </div>
               <span className="lp-feature-icon" aria-hidden="true">
                 <Icon name={icon} className="lp-feature-icon-svg" />
               </span>

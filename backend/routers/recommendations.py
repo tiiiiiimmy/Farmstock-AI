@@ -2,7 +2,7 @@
 AI-powered purchase recommendation endpoints.
 """
 from fastapi import APIRouter, Depends
-from ..database import get_db
+from ..database import get_db, PRODUCT_ALIASES
 from ..ai.predictor import get_all_predictions
 from ..ai.recommender import get_recommendations
 from ..auth import get_user_farm
@@ -27,7 +27,10 @@ def get_purchase_recommendations(farm: dict = Depends(get_user_farm)):
         order_rows = conn.execute(
             "SELECT * FROM orders WHERE farm_id = ? ORDER BY date", (farm_id,)
         ).fetchall()
-        orders = [dict(r) for r in order_rows]
+        orders = [
+            {**dict(r), "product_name": PRODUCT_ALIASES.get(r["product_name"], r["product_name"])}
+            for r in order_rows
+        ]
 
         product_rows = conn.execute("SELECT * FROM products").fetchall()
         products = [dict(r) for r in product_rows]

@@ -133,6 +133,7 @@ class OrderCreate(BaseModel):
     def clean_text_fields(cls, value):
         if isinstance(value, str):
             value = value.strip()
+            return value or None
         return value
 
     @field_validator("product_name", "unit")

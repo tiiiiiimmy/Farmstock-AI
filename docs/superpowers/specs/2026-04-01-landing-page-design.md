@@ -45,7 +45,7 @@ Two-column layout (45% / 55%).
 - Pill tag: "AI-Powered Farm Supply Management" (brand-light background)
 - H1 (two lines): `Never run out of / critical supplies again.`
 - Subheading: explains AI predictions, Telegram alerts, one-click ordering
-- Email input + `Try free for 1 hour →` button (inline row)
+- Email input + `Try free for 14 days →` button (inline row)
 - Fine print: `No credit card needed · 14-day free trial after`
 - Avatar stack + `Trusted by 500+ NZ & AU farms`
 

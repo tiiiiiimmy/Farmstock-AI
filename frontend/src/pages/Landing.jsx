@@ -97,29 +97,29 @@ const PAIN_POINTS = [
   },
 ];
 
-const FEATURES = [
+const VALUE_BLOCKS = [
   {
-    icon: "brain",
-    title: "AI Depletion Predictions",
-    body: "Knows your burn rate, herd size and season. Tells you exactly when to reorder — not too early, never too late.",
+    icon: "alert",
+    title: "Stop paying the emergency premium",
+    body: "Catch stock risks earlier so farms can order on schedule, not under pressure.",
     variant: "lp-feature-dark",
   },
   {
-    icon: "send",
-    title: "Telegram Alerts",
-    body: "Push notifications the moment stock runs low, prices drop, or weather threatens feed demand. Reply to order.",
+    icon: "clipboard",
+    title: "Turn messy supply work into one workflow",
+    body: "Move from memory, spreadsheets and scattered supplier chats into one daily operating view.",
     variant: "lp-feature-light",
   },
   {
     icon: "cart",
-    title: "One-Click Ordering",
-    body: "AI drafts and sends the purchase order email to your supplier automatically.",
+    title: "Get from insight to action in minutes",
+    body: "See what matters, confirm the decision, and move toward an order without extra admin steps.",
     variant: "lp-feature-white",
   },
   {
-    icon: "chart",
-    title: "Price Benchmarking",
-    body: "See how your unit prices compare to regional averages and catch savings opportunities.",
+    icon: "trend",
+    title: "Start with a demo, then roll out fast",
+    body: "Try the workflow on real sample data first, then bring your own farm live when you're ready.",
     variant: "lp-feature-muted",
   },
 ];
@@ -158,6 +158,7 @@ const HERO_PROOF = [
 const HERO_MODULES = [
   {
     id: "telegram",
+    tabLabel: "TELEGRAM BOT",
     kicker: "Telegram Bot",
     keyword: "Instant Telegram alerts",
     heroHeading: "Approve urgent orders from the paddock.",
@@ -172,6 +173,7 @@ const HERO_MODULES = [
   },
   {
     id: "inventory",
+    tabLabel: "INVENTORY HEALTH",
     kicker: "Inventory Health",
     keyword: "Live stock picture",
     heroHeading: "See supply pressure at a glance.",
@@ -186,6 +188,7 @@ const HERO_MODULES = [
   },
   {
     id: "forecast",
+    tabLabel: "REORDER FORECAST",
     kicker: "Reorder Forecast",
     keyword: "Next-buy priority list",
     heroHeading: "Know the next order before it is urgent.",
@@ -200,6 +203,7 @@ const HERO_MODULES = [
   },
   {
     id: "pricing",
+    tabLabel: "PRICE DROP",
     kicker: "Price Drop",
     keyword: "Catch supplier discounts",
     heroHeading: "Turn price swings into better timing.",
@@ -328,7 +332,7 @@ function EmailForm({ onSubmit, loading, error }) {
         required
       />
       <button type="submit" className="lp-cta-btn" disabled={loading}>
-        {loading ? "Starting…" : "Try free for 1 hour →"}
+        {loading ? "Starting…" : "Try free for 14 days →"}
       </button>
       {error && <p className="lp-form-error">{error}</p>}
     </form>
@@ -438,26 +442,37 @@ export default function Landing() {
         </div>
 
         <div className="lp-hero-right">
-          <div className="lp-module-showcase">
-            <div className="lp-module-grid">
-              {HERO_MODULES.map((module) => (
-                <button
-                  key={module.id}
-                  type="button"
-                  className={`lp-module-card ${activeModuleId === module.id ? "lp-module-card-active" : ""}`}
-                  onMouseEnter={() => setActiveModuleId(module.id)}
-                  onMouseLeave={() => setActiveModuleId(null)}
-                  onFocus={() => setActiveModuleId(module.id)}
-                  onBlur={() => setActiveModuleId(null)}
-                  onClick={() => setActiveModuleId(module.id)}
-                >
-                  <span className="lp-module-kicker">{module.kicker}</span>
-                  <strong className="lp-module-title">{module.keyword}</strong>
-                  <div className="lp-module-reveal">
-                    <ModuleRichCard module={module} />
-                  </div>
-                </button>
-              ))}
+          <div className="lp-hero-media-stack">
+            <div className="lp-hero-visual">
+              <img
+                src="/heroimg.png"
+                alt="FarmStock AI dashboard preview on phone and desktop"
+                className="lp-hero-img"
+                loading="eager"
+              />
+            </div>
+            <div className="lp-module-showcase">
+              <div className="lp-module-grid lp-module-grid--below-hero" role="tablist" aria-label="Product highlights">
+                {HERO_MODULES.map((module) => (
+                  <button
+                    key={module.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeModuleId === module.id}
+                    className={`lp-module-card lp-module-card--rich lp-module-card--${module.id} ${activeModuleId === module.id ? "lp-module-card-active" : ""}`}
+                    onMouseEnter={() => setActiveModuleId(module.id)}
+                    onMouseLeave={() => setActiveModuleId(null)}
+                    onFocus={() => setActiveModuleId(module.id)}
+                    onBlur={() => setActiveModuleId(null)}
+                    onClick={() => setActiveModuleId(module.id)}
+                  >
+                    <span className="lp-module-tab-label">{module.tabLabel}</span>
+                    <div className="lp-module-reveal">
+                      <ModuleRichCard module={module} />
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -497,14 +512,17 @@ export default function Landing() {
       {/* ── Features ── */}
       <section className="lp-features-wrap" id="features">
         <div className="lp-features-header">
-          <div className="lp-section-label">Features</div>
+          <div className="lp-section-label">Value</div>
           <h2 className="lp-section-heading">
-            Everything your farm supply manager needs.
+            Built to reduce waste, save time, and make trial-to-adoption easy.
           </h2>
         </div>
         <div className="lp-features-bento">
-          {FEATURES.map(({ icon, title, body, variant }) => (
+          {VALUE_BLOCKS.map(({ icon, title, body, variant }) => (
             <div key={title} className={`lp-feature-card ${variant}`}>
+              <div className="lp-feature-bg-mark" aria-hidden="true">
+                <Icon name={icon} className="lp-feature-bg-mark-svg" />
+              </div>
               <span className="lp-feature-icon" aria-hidden="true">
                 <Icon name={icon} className="lp-feature-icon-svg" />
               </span>

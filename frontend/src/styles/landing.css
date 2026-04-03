@@ -397,30 +397,33 @@ html {
   position: relative;
   z-index: 2;
   margin-top: clamp(-2rem, -4.5vw, -3.25rem);
-  padding: 0 0.2rem;
+  padding: 0 0.2rem 0 30px;
 }
 
 .lp-module-grid--below-hero {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  gap: 0.55rem;
+  gap: 0;
+  justify-content: space-between;
   align-items: flex-start;
 }
 
 .lp-module-card--rich {
   position: relative;
   z-index: 1;
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 0 0 227px;
+  width: 227px;
+  min-width: 227px;
+  max-width: 227px;
   align-self: flex-start;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 3.65rem;
-  height: 3.65rem;
-  padding: 0.45rem 0.45rem;
+  min-height: 4.5rem;
+  height: 4.5rem;
+  padding: 0.75rem 0.65rem;
   border-radius: 16px;
   border: 1px solid rgba(12, 30, 19, 0.07);
   box-shadow:
@@ -444,21 +447,15 @@ html {
 }
 
 /* 展开前统一底样式，不做额外色条描边 */
-.lp-module-card--telegram,
-.lp-module-card--inventory,
-.lp-module-card--pricing {
-  min-height: 3.15rem;
-  height: 3.15rem;
-}
 
 .lp-module-tab-label {
   display: block;
-  font-size: 0.56rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
-  line-height: 1.2;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
   text-transform: uppercase;
-  color: rgba(12, 30, 19, 0.72);
+  color: var(--ink-2);
   max-width: 100%;
   hyphens: auto;
 }
@@ -480,12 +477,16 @@ html {
 .lp-module-card--rich:hover,
 .lp-module-card--rich:focus-visible,
 .lp-module-card--rich.lp-module-card-active {
-  flex: 1.6 1 0;
+  flex: 0 0 463px;
+  width: 463px;
+  min-width: 463px;
+  max-width: 463px;
   z-index: 6;
   height: auto;
   min-height: 14rem;
   align-items: stretch;
-  justify-content: flex-start;
+  justify-content: space-between;
+  gap: 0;
   text-align: left;
   padding: 0.65rem 0.65rem 0.8rem;
   border: 1px solid #fff;
@@ -499,7 +500,7 @@ html {
 .lp-module-grid--below-hero:has(.lp-module-card--rich:hover) .lp-module-card--rich:not(:hover),
 .lp-module-grid--below-hero:has(.lp-module-card--rich:focus-visible) .lp-module-card--rich:not(:focus-visible),
 .lp-module-grid--below-hero:has(.lp-module-card--rich.lp-module-card-active) .lp-module-card--rich:not(.lp-module-card-active) {
-  flex: 0.8 1 0;
+  flex: 0 0 227px;
   opacity: 0.94;
 }
 
@@ -1007,52 +1008,6 @@ html {
   width: 30px;
   height: 30px;
 }
-
-.lp-feature-bg-mark {
-  position: absolute;
-  top: -10%;
-  right: -15%;
-  z-index: 0;
-  pointer-events: none;
-  transform-origin: center;
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.7s;
-}
-
-.lp-feature-bg-mark-svg {
-  width: 260px;
-  height: 260px;
-  stroke-width: 0.8px;
-  opacity: 0.8;
-}
-
-.lp-feature-dark .lp-feature-bg-mark {
-  color: #fff;
-  opacity: 0.04;
-}
-
-.lp-feature-light .lp-feature-bg-mark {
-  color: #fff;
-  opacity: 0.4;
-}
-
-.lp-feature-white .lp-feature-bg-mark {
-  color: var(--brand);
-  opacity: 0.03;
-}
-
-.lp-feature-muted .lp-feature-bg-mark {
-  color: #fff;
-  opacity: 0.5;
-}
-
-.lp-feature-card:hover .lp-feature-bg-mark {
-  transform: scale(1.1) rotate(-8deg);
-}
-
-.lp-feature-card:hover .lp-feature-dark .lp-feature-bg-mark { opacity: 0.08; }
-.lp-feature-card:hover .lp-feature-light .lp-feature-bg-mark { opacity: 0.6; }
-.lp-feature-card:hover .lp-feature-white .lp-feature-bg-mark { opacity: 0.06; }
-.lp-feature-card:hover .lp-feature-muted .lp-feature-bg-mark { opacity: 0.7; }
 
 .lp-feature-title {
   position: relative;

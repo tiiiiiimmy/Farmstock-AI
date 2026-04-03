@@ -69,6 +69,9 @@ export default function useOrderForm() {
     if (draft.unit_price === "" || Number(draft.unit_price) < 0) {
       nextErrors.unit_price = "Unit price cannot be negative";
     }
+    if (!draft.supplier_id) {
+      nextErrors.supplier_id = "Supplier is required";
+    }
     if (draft.notes && draft.notes.length > 500) {
       nextErrors.notes = "Notes must be 500 characters or fewer";
     }
@@ -84,7 +87,7 @@ export default function useOrderForm() {
       quantity,
       unit_price: unitPrice,
       total_price: Number((quantity * unitPrice).toFixed(2)),
-      supplier_id: draft.supplier_id || "",
+      supplier_id: draft.supplier_id || null,
     };
   }
 

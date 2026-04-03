@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { authApi } from "../api/client";
@@ -187,34 +187,34 @@ const HERO_MODULES = [
     points: ["Drench 22%", "Feed 60%", "Fertiliser 85%"],
   },
   {
-    id: "forecast",
-    tabLabel: "REORDER FORECAST",
-    kicker: "Reorder Forecast",
-    keyword: "Next-buy priority list",
-    heroHeading: "Know the next order before it is urgent.",
+    id: "ai-entry",
+    tabLabel: "AI DATA ENTRY",
+    kicker: "Smart Invoice Scanner",
+    keyword: "AI Data Entry",
+    heroHeading: "Snap a photo, let AI handle the entry.",
     heroBody:
-      "The reorder forecast ranks upcoming purchases by urgency and timing, giving farms a clear next-action list instead of forcing manual checks across every product and supplier.",
+      "Drop a photo of your supplier invoice. FarmStock AI extracts quantities, prices and categories instantly, turning messy paper trails into clean data.",
     heroProof: [
-      "AI-ranked order queue",
-      "Clear timing windows for each input",
-      "Less guesswork around season-driven demand",
+      "Photo to data in seconds",
+      "Catches price changes automatically",
+      "No manual typing needed",
     ],
-    points: ["Silage wrap in 6 days", "Drench critical this week", "Urea healthy for 3 weeks"],
+    points: ["Scan invoice", "Data extracted", "Ready"],
   },
   {
-    id: "pricing",
-    tabLabel: "PRICE DROP",
-    kicker: "Price Drop",
-    keyword: "Catch supplier discounts",
-    heroHeading: "Turn price swings into better timing.",
+    id: "regional-price",
+    tabLabel: "PRICE TRENDS",
+    kicker: "Regional Price Trends",
+    keyword: "Price Trends",
+    heroHeading: "Know if you're paying fair market price.",
     heroBody:
-      "Price alerts surface meaningful supplier drops early, so farms can lock in value on expensive inputs while the opportunity is still open instead of hearing about it too late.",
+      "Leverage aggregated, anonymised regional price trends to see how your supplier costs compare to neighboring farms.",
     heroProof: [
-      "Supplier price drops flagged early",
-      "Better timing for larger-ticket inputs",
-      "Savings captured before the window closes",
+      "Anonymised regional data",
+      "Spot overpriced inputs",
+      "Negotiate with confidence",
     ],
-    points: ["Superphosphate down 10%", "Farmlands pricing move"],
+    points: ["Market price", "Your price", "Savings"],
   },
 ];
 
@@ -222,25 +222,32 @@ function ModuleRichCard({ module }) {
   if (module.id === "telegram") {
     return (
       <div className="lp-rich-card lp-rich-card-telegram">
-        <div className="lp-tg-header">
-          <span className="lp-tg-icon" aria-hidden="true">
-            <Icon name="send" className="lp-tg-icon-svg" />
-          </span>
-          <div>
-            <p className="lp-tg-name">FarmStock AI</p>
-            <p className="lp-tg-sub">Telegram Bot</p>
+        <div className="lp-tg-container">
+          <div className="lp-tg-header">
+            <span className="lp-tg-icon" aria-hidden="true">
+              <Icon name="send" className="lp-tg-icon-svg" />
+            </span>
+            <div>
+              <p className="lp-tg-name">FarmStock AI</p>
+              <p className="lp-tg-sub">bot</p>
+            </div>
           </div>
-        </div>
-        <div className="lp-tg-bubble">
-          <Icon name="warning" className="lp-inline-status-icon" /> Your <strong>Ivomec drench</strong> runs out in <strong>8 days</strong>. Order now?
-        </div>
-        <div className="lp-tg-actions">
-          <button className="lp-tg-btn lp-tg-btn-yes" type="button">
-            <Icon name="check" className="lp-btn-icon" /> Yes, order
-          </button>
-          <button className="lp-tg-btn lp-tg-btn-no" type="button">
-            Later
-          </button>
+          <div className="lp-tg-body">
+            <div className="lp-tg-bubble">
+              <Icon name="warning" className="lp-inline-status-icon" /> Your <strong>Ivomec drench</strong> runs out in <strong>8 days</strong>. Order now?
+            </div>
+            <div className="lp-tg-actions">
+              <button className="lp-tg-btn lp-tg-btn-yes" type="button">
+                <Icon name="check" className="lp-btn-icon" /> Yes, order
+              </button>
+              <button className="lp-tg-btn lp-tg-btn-no" type="button">
+                Later
+              </button>
+            </div>
+            <div className="lp-tg-bubble lp-tg-bubble-response">
+              ✅ Order placed. Farmlands will deliver on Tuesday.
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -249,67 +256,93 @@ function ModuleRichCard({ module }) {
   if (module.id === "inventory") {
     return (
       <div className="lp-rich-card lp-rich-card-inventory">
-        <p className="lp-bento-label">Inventory Health</p>
-        <div className="lp-mini-bars">
-          {[
-            { label: "Drench", pct: 22, color: "var(--red)" },
-            { label: "Feed", pct: 60, color: "var(--amber)" },
-            { label: "Fertiliser", pct: 85, color: "var(--brand)" },
-          ].map(({ label, pct, color }) => (
-            <div key={label} className="lp-mini-bar-row">
-              <span className="lp-mini-bar-label">{label}</span>
-              <div className="lp-mini-bar-track">
-                <div className="lp-mini-bar-fill" style={{ width: `${pct}%`, background: color }} />
+        <div className="lp-inv-top">
+          <div className="lp-bento-label" style={{ fontSize: '1.4rem', marginBottom: '0', color: 'var(--ink)' }}>Inventory Health Snapshot</div>
+          <span className="lp-forecast-chip">Live sync</span>
+        </div>
+        <div className="lp-inv-main">
+          <div className="lp-inv-stat">
+            <h1>92%</h1>
+            <p>Overall Health</p>
+          </div>
+          <div className="lp-mini-bars">
+            {[
+              { label: "Drench (Ivomec)", pct: 22, color: "var(--red)", note: "Critical" },
+              { label: "Feed (Silage)", pct: 60, color: "var(--amber)", note: "Reorder coming up" },
+              { label: "Fertiliser (Urea)", pct: 85, color: "var(--brand)", note: "Healthy" },
+            ].map(({ label, pct, color, note }) => (
+              <div key={label} className="lp-mini-bar-row">
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem' }}>
+                  <span className="lp-mini-bar-label" style={{ fontSize: '1.15rem', fontWeight: '500' }}>{label}</span>
+                  <span className="lp-mini-bar-pct" style={{ fontSize: '1.15rem', color: color, fontWeight: '600' }}>{note}</span>
+                </div>
+                <div className="lp-mini-bar-track" style={{ height: '14px' }}>
+                  <div className="lp-mini-bar-fill" style={{ width: `${pct}%`, background: color }} />
+                </div>
               </div>
-              <span className="lp-mini-bar-pct">{pct}%</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  if (module.id === "forecast") {
+  if (module.id === "ai-entry") {
     return (
-      <div className="lp-rich-card lp-rich-card-forecast">
-        <div className="lp-forecast-head">
-          {/* <p className="lp-bento-label">Reorder forecast</p> */}
-          <span className="lp-forecast-chip">AI ranked</span>
+      <div className="lp-rich-card lp-rich-card-ai">
+        <div className="lp-forecast-head" style={{ marginBottom: '2.5rem'}}>
+          <p className="lp-bento-label" style={{ fontSize: '1.4rem', marginBottom: '0', color: 'var(--ink)' }}>Smart Invoice Extraction</p>
+          <span className="lp-forecast-chip">AI Powered</span>
         </div>
-        <div className="lp-forecast-list">
-          {[
-            { name: "Silage wrap", window: "Order in 6 days", tone: "amber" },
-            { name: "Drench", window: "Critical this week", tone: "red" },
-            // { name: "Urea", window: "Healthy for 3 weeks", tone: "green" },
-          ].map((item) => (
-            <div key={item.name} className="lp-forecast-row">
-              <span className={`lp-forecast-dot lp-forecast-dot-${item.tone}`} />
-              <div className="lp-forecast-copy">
-                <strong>{item.name}</strong>
-                <span>{item.window}</span>
+        <div className="lp-ai-split">
+          <div className="lp-ai-receipt-pane">
+            <div className="lp-ai-receipt-doc">
+               <div className="lp-ai-doc-head">TAX INVOICE</div>
+               <div className="lp-ai-doc-vendor">Ravensdown Ltd</div>
+               <div className="lp-ai-doc-lines">
+                 <div className="lp-ai-doc-line"><span>Superphosphate</span><span>12.5 T</span></div>
+                 <div className="lp-ai-doc-line"><span>Urea 46N</span><span>5.0 T</span></div>
+               </div>
+               <div className="lp-ai-doc-total">Total: $14,250.00</div>
+               <div className="lp-ai-scanner-beam"></div>
+            </div>
+          </div>
+          <div className="lp-ai-form-pane">
+            <div className="lp-ai-form-header">
+              <div className="lp-ai-success-msg">
+                 <Icon name="check-circle" className="lp-ai-check-icon"/>
+                 Data Extracted
               </div>
             </div>
-          ))}
+            <div className="lp-ai-grid">
+               <div className="lp-ai-field">
+                 <label>Supplier Extracted</label>
+                 <div className="lp-ai-input">Ravensdown Ltd <Icon name="zap" className="lp-ai-sparkle"/></div>
+               </div>
+               <div className="lp-ai-field">
+                 <label>Items Detected</label>
+                 <div className="lp-ai-input">2 Products <Icon name="zap" className="lp-ai-sparkle"/></div>
+               </div>
+               <div className="lp-ai-field lp-ai-field-full">
+                 <label>Total Invoice Value</label>
+                 <div className="lp-ai-input lp-ai-input-highlight">$14,250.00 <Icon name="zap" className="lp-ai-sparkle"/></div>
+               </div>
+            </div>
+            <button type="button" className="lp-ai-save-btn">Approve & Save to Inventory</button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="lp-rich-card lp-rich-card-pricing">
-      <div className="lp-bento-pill">
-        <span className="lp-pill-icon" aria-hidden="true">
-          <Icon name="priceDrop" className="lp-pill-icon-svg" />
-        </span>
-        <span>
-          Price drop! Superphosphate <strong>↓10%</strong> at Farmlands
-        </span>
-      </div>
-      <div className="lp-price-card-foot">
-        <span>Watchlist active</span>
-        <strong>Best buy window open</strong>
-      </div>
-    </div>
+    <img
+      src="/heroimg4.png"
+      alt="Regional Price Trends"
+      className="lp-hero-img"
+      loading="eager"
+      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+    />
   );
 }
 
@@ -345,8 +378,30 @@ export default function Landing() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeModuleId, setActiveModuleId] = useState(null);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  if (token) return <Navigate to="/dashboard" replace />;
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+
+    let intervalId;
+    const timeoutId = setTimeout(() => {
+      setActiveModuleId(HERO_MODULES[0].id);
+      intervalId = setInterval(() => {
+        setActiveModuleId((currentId) => {
+          if (!currentId) return HERO_MODULES[0].id;
+          const currentIndex = HERO_MODULES.findIndex((m) => m.id === currentId);
+          const nextIndex = (currentIndex + 1) % HERO_MODULES.length;
+          return HERO_MODULES[nextIndex].id;
+        });
+      }, 3000);
+    }, 2000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isAutoPlaying]);
+
 
   const handleTrial = async (email) => {
     setError("");
@@ -380,8 +435,14 @@ export default function Landing() {
           <Link to="/pricing" className="lp-nav-link">Pricing</Link>
         </div>
         <div className="lp-nav-actions">
-          <Link to="/login" className="lp-nav-ghost">Sign In</Link>
-          <Link to="/register" className="lp-nav-primary">Start Free Trial</Link>
+          {token ? (
+            <Link to="/dashboard" className="lp-nav-primary">Go to Dashboard</Link>
+          ) : (
+            <>
+              <Link to="/login" className="lp-nav-ghost">Sign In</Link>
+              <Link to="/register" className="lp-nav-primary">Start Free Trial</Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -444,12 +505,18 @@ export default function Landing() {
         <div className="lp-hero-right">
           <div className="lp-hero-media-stack">
             <div className="lp-hero-visual">
-              <img
-                src="/heroimg.png"
-                alt="FarmStock AI dashboard preview on phone and desktop"
-                className="lp-hero-img"
-                loading="eager"
-              />
+              {!activeModuleId ? (
+                <img
+                  key="default-img"
+                  src="/heroimg.png"
+                  alt="FarmStock AI default dashboard"
+                  className="lp-hero-img"
+                  loading="eager"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <ModuleRichCard key={activeModule.id} module={activeModule} />
+              )}
             </div>
             <div className="lp-module-showcase">
               <div className="lp-module-grid lp-module-grid--below-hero" role="tablist" aria-label="Product highlights">
@@ -460,16 +527,13 @@ export default function Landing() {
                     role="tab"
                     aria-selected={activeModuleId === module.id}
                     className={`lp-module-card lp-module-card--rich lp-module-card--${module.id} ${activeModuleId === module.id ? "lp-module-card-active" : ""}`}
-                    onMouseEnter={() => setActiveModuleId(module.id)}
+                    onMouseEnter={() => { setIsAutoPlaying(false); setActiveModuleId(module.id); }}
                     onMouseLeave={() => setActiveModuleId(null)}
-                    onFocus={() => setActiveModuleId(module.id)}
+                    onFocus={() => { setIsAutoPlaying(false); setActiveModuleId(module.id); }}
                     onBlur={() => setActiveModuleId(null)}
-                    onClick={() => setActiveModuleId(module.id)}
+                    onClick={() => { setIsAutoPlaying(false); setActiveModuleId(module.id); }}
                   >
                     <span className="lp-module-tab-label">{module.tabLabel}</span>
-                    <div className="lp-module-reveal">
-                      <ModuleRichCard module={module} />
-                    </div>
                   </button>
                 ))}
               </div>

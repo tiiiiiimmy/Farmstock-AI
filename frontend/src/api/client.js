@@ -79,6 +79,7 @@ export const authApi = {
   login: (data) => request("/api/auth/login", { method: "POST", body: JSON.stringify(data) }),
   me: () => request("/api/auth/me"),
   logout: () => request("/api/auth/logout", { method: "POST" }),
+  startTrial: (data) => request("/api/trial/start", { method: "POST", body: JSON.stringify(data) }),
 };
 
 export const api = {

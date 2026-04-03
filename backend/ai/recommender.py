@@ -109,8 +109,8 @@ def get_recommendations(
         seasonal_hints = {
             "spring": ["Superphosphate Fertiliser", "Nitrogen Fertiliser Urea", "Ryegrass Seed 25kg", "Cattle Vaccine 50mL"],
             "summer": ["Roundup Ready 20L", "Herbicide 10L", "Detergent 20L"],
-            "autumn": ["Magnesium Oxide 25kg", "Bloat Oil 20L", "Zinc Oxide Supplement 25kg"],
-            "winter": ["Dairy Pellets 1t", "Hay Bales", "Feed Pellets Premium 500kg", "Calf Milk Replacer 20kg"],
+            "autumn": ["Magnesium Oxide 25kg", "Bloat Oil 20L", "Zinc Oxide Supplement 25kg", "Palm Kernel Extract"],
+            "winter": ["Dairy Pellets 1t", "Hay Bales", "Feed Pellets Premium 500kg", "Calf Milk Replacer 20kg", "Palm Kernel Extract"],
         }
         for product_name in seasonal_hints.get(season, []):
             if product_name in recommended_names:

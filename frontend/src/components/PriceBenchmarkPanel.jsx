@@ -5,13 +5,13 @@ import {
   Line,
   LineChart,
   ReferenceLine,
+  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import { api } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
-import MetricCard from "./MetricCard";
 import { formatCurrencyNzd } from "../utils/formatters";
 
 function BenchmarkTooltip({ active, payload }) {
@@ -25,18 +25,77 @@ function BenchmarkTooltip({ active, payload }) {
   );
 }
 
-export default function PriceBenchmarkPanel({ orders = [], suppliers = [] }) {
-  const [selectedSupplierId, setSelectedSupplierId] = useState("");
+function PriceRangeTrack({ min, max, avg, yourPrice, unit, percentile }) {
+  const range = max - min || 1;
+  const avgPct = Math.min(100, Math.max(0, ((avg - min) / range) * 100));
+  const youPct = Math.min(100, Math.max(0, ((yourPrice - min) / range) * 100));
+  const labelAlign = youPct < 20 ? "left" : youPct > 80 ? "right" : "center";
+  const cheaper = percentile !== null;
+  const tone = cheaper
+    ? percentile >= 50
+      ? "good"
+      : percentile >= 25
+        ? "mid"
+        : "high"
+    : "mid";
+
+  return (
+    <div className="bm-range-wrap">
+      {/* Stat row */}
+      <div className="bm-stat-row">
+        <div className="bm-stat">
+          <span className="bm-stat-label">Min</span>
+          <span className="bm-stat-value">{formatCurrencyNzd(min)}</span>
+        </div>
+        <div className="bm-stat bm-stat-center">
+          <span className="bm-stat-label">Regional avg</span>
+          <span className="bm-stat-value bm-stat-avg">{formatCurrencyNzd(avg)}</span>
+          <span className="bm-stat-unit">per {unit}</span>
+        </div>
+        <div className="bm-stat bm-stat-right">
+          <span className="bm-stat-label">Max</span>
+          <span className="bm-stat-value">{formatCurrencyNzd(max)}</span>
+        </div>
+      </div>
+
+      {/* Track */}
+      <div className="bm-track">
+        <div className="bm-track-fill" />
+        {/* Avg tick */}
+        <div className="bm-avg-tick" style={{ left: `${avgPct}%` }} />
+        {/* Your price marker */}
+        <div
+          className={`bm-you-marker bm-you-marker-${tone}`}
+          style={{ left: `${youPct}%` }}
+        >
+          <div className="bm-you-dot" />
+          <div className={`bm-you-label bm-you-label-${labelAlign}`}>
+            <span className="bm-you-price">{formatCurrencyNzd(yourPrice)}/{unit}</span>
+            {cheaper && (
+              <span className={`bm-you-badge bm-badge-${tone}`}>
+                Cheaper than {percentile}%
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Track end-labels */}
+      {/* <div className="bm-track-labels">
+        <span>Cheapest in region</span>
+        <span>Most expensive</span>
+      </div> */}
+    </div>
+  );
+}
+
+export default function PriceBenchmarkPanel({ orders = [] }) {
   const [selectedProduct, setSelectedProduct] = useState("");
 
-  // Derive product list for the selected supplier from the passed-in orders
   const productOptions = useMemo(() => {
-    const filtered = selectedSupplierId
-      ? orders.filter((o) => o.supplier_id === selectedSupplierId)
-      : orders;
     const seen = new Set();
     const result = [];
-    for (const o of filtered) {
+    for (const o of orders) {
       const key = o.product_name.toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
@@ -44,54 +103,47 @@ export default function PriceBenchmarkPanel({ orders = [], suppliers = [] }) {
       }
     }
     return result.sort();
-  }, [orders, selectedSupplierId]);
+  }, [orders]);
 
   const benchmarkQuery = useQuery({
-    queryKey: queryKeys.priceBenchmark(selectedProduct, selectedSupplierId || null),
-    queryFn: () => api.getPriceBenchmark(selectedProduct, selectedSupplierId || null),
+    queryKey: queryKeys.priceBenchmark(selectedProduct, null),
+    queryFn: () => api.getPriceBenchmark(selectedProduct, null),
     enabled: Boolean(selectedProduct),
   });
 
   const data = benchmarkQuery.data;
 
-  function handleSupplierChange(e) {
-    setSelectedSupplierId(e.target.value);
-    setSelectedProduct("");
-  }
-
   return (
     <section className="panel">
       <div className="panel-header">
         <h3>Price Comparison</h3>
+        {data?.farm_count && (
+          <span className="bm-farm-pill">{data.farm_count} farms in region</span>
+        )}
       </div>
 
       <div className="benchmark-controls">
-        <select value={selectedSupplierId} onChange={handleSupplierChange}>
-          <option value="">All suppliers</option>
-          {suppliers.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={selectedProduct}
-          onChange={(e) => setSelectedProduct(e.target.value)}
-          disabled={productOptions.length === 0}
-        >
-          <option value="">Select a product…</option>
-          {productOptions.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
+        <div className="bm-select-wrap">
+          <svg className="bm-select-icon" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M5 7h6M5 10h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <select
+            value={selectedProduct}
+            onChange={(e) => setSelectedProduct(e.target.value)}
+            disabled={productOptions.length === 0}
+          >
+            <option value="">Select a product…</option>
+            {productOptions.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {!selectedProduct && (
         <p className="benchmark-no-data">
-          Select a supplier and product to see regional price comparison.
+          Select a product to see regional price comparison.
         </p>
       )}
 
@@ -107,28 +159,6 @@ export default function PriceBenchmarkPanel({ orders = [], suppliers = [] }) {
 
       {data && (
         <>
-          <section className="metrics-grid">
-            <MetricCard
-              label="Regional avg"
-              value={data.data_available ? formatCurrencyNzd(data.regional_avg) : "—"}
-              hint={data.unit ? `per ${data.unit}` : undefined}
-            />
-            <MetricCard
-              label="Regional min"
-              value={data.data_available ? formatCurrencyNzd(data.regional_min) : "—"}
-              tone={data.data_available ? "neutral" : "neutral"}
-            />
-            <MetricCard
-              label="Regional max"
-              value={data.data_available ? formatCurrencyNzd(data.regional_max) : "—"}
-            />
-            <MetricCard
-              label="Farms in region"
-              value={data.data_available ? data.farm_count : "—"}
-              hint={data.data_available ? undefined : "Need 3+ farms"}
-            />
-          </section>
-
           {!data.data_available && (
             <p className="benchmark-no-data">
               Not enough regional data yet — regional comparison requires at least 3 farms
@@ -136,51 +166,56 @@ export default function PriceBenchmarkPanel({ orders = [], suppliers = [] }) {
             </p>
           )}
 
-          {data.data_available && data.your_percentile !== null && (
-            <div className="benchmark-percentile-row">
-              <span className="benchmark-your-price">
-                Your latest: {formatCurrencyNzd(data.your_latest_price)}/{data.unit}
-              </span>
-              <div className="benchmark-bar-track">
-                <div
-                  className="benchmark-bar-fill"
-                  style={{ width: `${data.your_percentile}%` }}
-                />
-              </div>
-              <span className="benchmark-percentile-label">
-                You&apos;re cheaper than {data.your_percentile}% of farms in your region
-              </span>
-            </div>
+          {data.data_available && (
+            <PriceRangeTrack
+              min={data.regional_min}
+              max={data.regional_max}
+              avg={data.regional_avg}
+              yourPrice={data.your_latest_price}
+              unit={data.unit}
+              percentile={data.your_percentile}
+            />
           )}
 
           {data.trend.length > 0 && (
-            <div className="benchmark-chart-wrap">
-              <LineChart width={680} height={220} data={data.trend}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(73, 86, 80, 0.15)" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis
-                  tickFormatter={(v) => `$${v}`}
-                  width={52}
-                  tick={{ fontSize: 11 }}
-                />
-                <Tooltip content={<BenchmarkTooltip />} />
-                {data.data_available && (
-                  <ReferenceLine
-                    y={data.regional_avg}
-                    stroke="var(--ink-3)"
-                    strokeDasharray="5 4"
-                    label={{ value: "Region avg", fontSize: 11, fill: "var(--ink-3)" }}
+            <div className="bm-chart-wrap">
+              <p className="bm-chart-label">Your price history</p>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={data.trend} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(73, 86, 80, 0.12)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: "var(--ink-3)" }}
+                    tickLine={false}
+                    axisLine={false}
                   />
-                )}
-                <Line
-                  type="monotone"
-                  dataKey="unit_price"
-                  stroke="var(--brand)"
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: "var(--brand)" }}
-                  name="Your unit price"
-                />
-              </LineChart>
+                  <YAxis
+                    tickFormatter={(v) => `$${v}`}
+                    width={48}
+                    tick={{ fontSize: 10, fill: "var(--ink-3)" }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip content={<BenchmarkTooltip />} />
+                  {data.data_available && (
+                    <ReferenceLine
+                      y={data.regional_avg}
+                      stroke="var(--ink-3)"
+                      strokeDasharray="4 3"
+                      label={{ value: "Region avg", fontSize: 10, fill: "var(--ink-3)", position: "insideTopRight" }}
+                    />
+                  )}
+                  <Line
+                    type="monotone"
+                    dataKey="unit_price"
+                    stroke="var(--brand)"
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: "var(--brand)", strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: "var(--brand)", strokeWidth: 0 }}
+                    name="Your unit price"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           )}
         </>

@@ -1011,7 +1011,7 @@ function EmailForm({ onSubmit, loading, error }) {
         required
       />
       <button type="submit" className="lp-cta-btn" disabled={loading}>
-        {loading ? "Starting…" : "Try free for 1 hour →"}
+        {loading ? "Starting…" : "Try free for 14 days →"}
       </button>
       {error && <p className="lp-form-error">{error}</p>}
     </form>

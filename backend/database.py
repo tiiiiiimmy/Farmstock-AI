@@ -26,6 +26,16 @@ LEAD_TIME_BY_CATEGORY = {
     "equipment": 14,
 }
 
+# Maps variant/alias product names found in orders → canonical products.name.
+# Add entries here whenever orders arrive with a name that differs from the catalog.
+PRODUCT_ALIASES: dict = {
+    "Dairy Pellets 20kg": "Dairy Pellets 1t",
+    "Ivomec Plus Drench 2.5L": "Ivomec Plus Drench 5L",
+    "Superphosphate": "Superphosphate Fertiliser",
+    "Zinc Oxide Supplement": "Zinc Oxide Supplement 25kg",
+    "Ryegrass Seed 20kg": "Ryegrass Seed 25kg",
+}
+
 
 def get_db_path() -> str:
     db_path = os.environ.get("DATABASE_PATH", DEFAULT_DB_PATH)
@@ -242,6 +252,11 @@ def seed_demo_farm(conn, farm_id: str, user_id: str = None):
             )
     conn.commit()
 
+    # Seed inventory snapshots so dashboard charts work immediately
+    cur = conn.cursor()
+    _seed_inventory_snapshots(conn, cur, farm_id)
+    conn.commit()
+
 
 def seed_db():
     conn = _connect(get_db_path())
@@ -250,7 +265,11 @@ def seed_db():
     # Check if already seeded
     row = cur.execute("SELECT COUNT(*) FROM farms").fetchone()
     if row[0] > 0:
-        _seed_inventory_snapshots(conn, cur, "farm-001")
+        farm_ids = [r[0] for r in cur.execute(
+            "SELECT DISTINCT farm_id FROM orders"
+        ).fetchall()]
+        for fid in farm_ids:
+            _seed_inventory_snapshots(conn, cur, fid)
         conn.commit()
         conn.close()
         return
@@ -360,6 +379,9 @@ def seed_db():
         ("prod-025", "Water Trough Valve", "equipment", -1, "green",
          "Store dry", 1.0, "units",
          "Float valve assembly for water troughs"),
+        ("prod-026", "Palm Kernel Extract", "feed", 90, "yellow",
+         "Store dry, covered, off ground", 0.67, "tonnes",
+         "High-energy palm kernel expeller for dairy cow supplementation"),
     ]
 
     for p in products:
@@ -375,6 +397,7 @@ def seed_db():
     # seasonal_months: None = year-round, list = only those months
     patterns = [
         # Feed - heavy winter purchasing (Jun-Aug = months 6,7,8)
+        ("Palm Kernel Extract", "feed", 28, 1.5, 3.0, "tonnes", 310.0, supplier1_id, None),
         ("Dairy Pellets 1t", "feed", 30, 2.0, 8.0, "tonnes", 520.0, supplier1_id, None),
         ("Hay Bales", "feed", 45, 3.0, 50.0, "units", 18.0, supplier1_id, [5, 6, 7, 8, 9]),
         ("Feed Pellets Premium 500kg", "feed", 35, 1.8, 4.0, "tonnes", 680.0, supplier1_id, None),
@@ -510,13 +533,20 @@ def _seed_inventory_snapshots(conn, cur, farm_id: str):
     ).fetchall()
     now = datetime.utcnow()
 
+    # Build reverse alias map: canonical name → all known alias names
+    aliases_for = {}
+    for alias, canonical in PRODUCT_ALIASES.items():
+        aliases_for.setdefault(canonical, []).append(alias)
+
     for index, product in enumerate(product_rows):
-        order_rows = cur.execute("""
+        names = [product["name"]] + aliases_for.get(product["name"], [])
+        placeholders = ",".join("?" * len(names))
+        order_rows = cur.execute(f"""
             SELECT date, quantity
             FROM orders
-            WHERE farm_id = ? AND product_name = ?
+            WHERE farm_id = ? AND product_name IN ({placeholders})
             ORDER BY date
-        """, (farm_id, product["name"])).fetchall()
+        """, (farm_id, *names)).fetchall()
         if not order_rows:
             continue
 
@@ -573,7 +603,7 @@ def _seed_inventory_snapshots(conn, cur, farm_id: str):
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            f"inv-{index + 1:03d}",
+            str(uuid.uuid4()),
             farm_id,
             product["id"],
             current_quantity,

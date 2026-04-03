@@ -14,8 +14,15 @@ export default function OrderFormModal({
   onFieldChange,
   onUnitSelect,
   onSubmit,
-  hasSupplierDirectory,
+  onAddSupplier,
 }) {
+  function handleSupplierChange(e) {
+    if (e.target.value === "__add_new__") {
+      onAddSupplier?.(draft.product_name);
+      return;
+    }
+    onFieldChange(e);
+  }
   return (
     <ModalBase
       isOpen={isOpen}
@@ -92,24 +99,22 @@ export default function OrderFormModal({
         </label>
         <label className="field-group">
           <span className="field-label">
-            Supplier <span className="muted field-optional">(optional)</span>
+            Supplier <span className="field-required">*</span>
           </span>
           <select
             name="supplier_id"
             value={draft.supplier_id || ""}
-            onChange={onFieldChange}
-            disabled={!hasSupplierDirectory}
+            onChange={handleSupplierChange}
           >
-            <option value="">— None —</option>
+            <option value="">— Select a supplier —</option>
+            <option value="__add_new__">＋ Add new supplier</option>
+            {suppliers.length > 0 && <option disabled>──────────────</option>}
             {suppliers.map((supplier) => (
               <option key={supplier.id} value={supplier.id}>
                 {supplier.name}
               </option>
             ))}
           </select>
-          {!hasSupplierDirectory ? (
-            <span className="field-help">Add suppliers in Farm Profile to link purchases to supplier records.</span>
-          ) : null}
           {errors.supplier_id ? <span className="field-error">{errors.supplier_id}</span> : null}
         </label>
         <label className="field-group">

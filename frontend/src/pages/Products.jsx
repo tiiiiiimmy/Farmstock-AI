@@ -8,7 +8,7 @@ import { useCurrentFarm } from "../context/CurrentFarmContext";
 import { formatEnumLabel } from "../utils/formatters";
 
 const CATEGORIES = ["feed", "fertiliser", "veterinary", "chemical", "equipment"];
-const ZONES = ["green", "amber", "red"];
+const ZONES = ["green", "yellow", "red"];
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
@@ -283,6 +283,7 @@ export default function ProductsPage() {
         <OrderEmailModal
           product={orderProduct}
           suppliers={suppliers}
+          products={productsQuery.data || []}
           farmId={currentFarm.id}
           farmName={currentFarm.name}
           onClose={() => setOrderProduct(null)}

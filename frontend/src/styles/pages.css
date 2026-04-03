@@ -339,7 +339,8 @@
   border-color: transparent;
 }
 
-.tag-btn.zone-amber {
+.tag-btn.zone-amber,
+.tag-btn.zone-yellow {
   background: var(--amber-soft);
   color: var(--amber);
   border-color: transparent;
@@ -352,7 +353,8 @@
 }
 
 .tag-btn.zone-green.active  { border-color: var(--green); }
-.tag-btn.zone-amber.active  { border-color: var(--amber); }
+.tag-btn.zone-amber.active,
+.tag-btn.zone-yellow.active { border-color: var(--amber); }
 .tag-btn.zone-red.active    { border-color: var(--red); }
 
 /* Active filter chips */
@@ -654,59 +656,249 @@
 
 /* ─── Price Benchmark Panel ────────────────────────────────── */
 
-.benchmark-controls {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+.bm-farm-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
-.benchmark-controls select {
+.benchmark-controls {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-top: 0.1rem;
+}
+
+.bm-select-wrap {
+  position: relative;
   flex: 1 1 180px;
   min-width: 0;
+}
+
+.bm-select-icon {
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--ink-3);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.bm-select-wrap select {
+  width: 100%;
+  padding-left: 2.1rem;
 }
 
 .benchmark-no-data {
   color: var(--ink-2);
   font-size: 0.85rem;
-  padding: 0.5rem 0;
+  padding: 0.75rem 0 0.25rem;
 }
 
-.benchmark-percentile-row {
+/* ─── Range track ───────────────────────────────────────────── */
+
+.bm-range-wrap {
+  margin-top: 1.4rem;
+  padding: 1.1rem 1.25rem 0.85rem;
+  background: var(--surface-2);
+  border-radius: var(--r-lg);
+}
+
+.bm-stat-row {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1rem;
 }
 
-.benchmark-percentile-label {
-  font-size: 0.85rem;
-  color: var(--ink-2);
+.bm-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.bm-stat-center {
+  align-items: center;
+  text-align: center;
+}
+
+.bm-stat-right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.bm-stat-label {
+  font-size: 0.72rem;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 500;
+}
+
+.bm-stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.bm-stat-avg {
+  font-size: 1.15rem;
+  color: var(--brand);
+}
+
+.bm-stat-unit {
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+
+/* The actual track */
+
+.bm-track {
+  position: relative;
+  height: 6px;
+  background: rgba(12, 30, 19, 0.1);
+  border-radius: 99px;
+  margin-bottom: 2.4rem;
+}
+
+.bm-track-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 99px;
+  background: linear-gradient(to right, var(--brand-light), var(--brand-mid));
+}
+
+/* Avg tick — vertical notch on the track */
+.bm-avg-tick {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 14px;
+  background: var(--brand);
+  border-radius: 2px;
+  transform: translateX(-50%);
+}
+
+/* Your price marker */
+.bm-you-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.bm-you-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2.5px solid var(--surface);
+  box-shadow: 0 0 0 1.5px currentColor, var(--shadow-sm);
+  position: relative;
+  z-index: 1;
+}
+
+.bm-you-marker-good { color: var(--brand); }
+.bm-you-marker-mid  { color: var(--amber); }
+.bm-you-marker-high { color: var(--red); }
+
+.bm-you-marker-good .bm-you-dot { background: var(--brand); }
+.bm-you-marker-mid  .bm-you-dot { background: var(--amber); }
+.bm-you-marker-high .bm-you-dot { background: var(--red); }
+
+.bm-you-label {
+  position: absolute;
+  top: calc(100% + 6px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   white-space: nowrap;
 }
 
-.benchmark-bar-track {
-  flex: 1 1 120px;
-  height: 8px;
-  background: var(--surface-2);
-  border-radius: 99px;
-  overflow: hidden;
-  min-width: 80px;
+.bm-you-label-center {
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
 }
 
-.benchmark-bar-fill {
-  height: 100%;
-  background: var(--brand-mid);
-  border-radius: 99px;
-  transition: width 0.4s ease;
+.bm-you-label-left {
+  left: 0;
+  transform: none;
+  align-items: flex-start;
 }
 
-.benchmark-chart-wrap {
-  overflow-x: auto;
+.bm-you-label-right {
+  left: auto;
+  right: 0;
+  transform: none;
+  align-items: flex-end;
 }
 
-.benchmark-your-price {
-  font-size: 0.9rem;
-  font-weight: 600;
+.bm-you-price {
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--ink);
   white-space: nowrap;
 }
+
+.bm-you-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.bm-badge-good {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.bm-badge-mid {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.bm-badge-high {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.bm-track-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.35rem;
+  font-size: 0.7rem;
+  color: var(--ink-3);
+}
+
+/* ─── Trend chart ───────────────────────────────────────────── */
+
+.bm-chart-wrap {
+  margin-top: 1.4rem;
+}
+
+.bm-chart-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.5rem;
+}
+
+/* legacy compat — keep old classes harmless */
+.benchmark-bar-track,
+.benchmark-bar-fill,
+.benchmark-chart-wrap,
+.benchmark-your-price,
+.benchmark-percentile-row,
+.benchmark-percentile-label { display: none; }

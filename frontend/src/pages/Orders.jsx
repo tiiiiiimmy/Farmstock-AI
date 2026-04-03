@@ -7,6 +7,7 @@ import OrderFormModal from "../components/OrderFormModal";
 import OrderTable from "../components/OrderTable";
 import PageState from "../components/PageState";
 import PriceBenchmarkPanel from "../components/PriceBenchmarkPanel";
+import SupplierModal from "../components/SupplierModal";
 import { useCurrentFarm } from "../context/CurrentFarmContext";
 import useOrderForm from "../hooks/useOrderForm";
 
@@ -42,6 +43,33 @@ export default function OrdersPage() {
   });
   const suppliers = suppliersQuery.data || [];
   const suppliersById = Object.fromEntries(suppliers.map((supplier) => [supplier.id, supplier]));
+
+  const productsQuery = useQuery({
+    queryKey: queryKeys.products(),
+    queryFn: api.getProducts,
+  });
+  const products = productsQuery.data || [];
+
+  const [addSupplierForProduct, setAddSupplierForProduct] = useState(null); // product_name string or null
+  const [supplierError, setSupplierError] = useState("");
+
+  const createSupplierMutation = useMutation({
+    mutationFn: async ({ product_ids, ...data }) => {
+      const supplier = await api.createSupplier(currentFarmId, data);
+      if (product_ids?.length) {
+        await api.setSupplierProducts(currentFarmId, supplier.id, product_ids);
+      }
+      return supplier;
+    },
+    onSuccess: () => {
+      setAddSupplierForProduct(null);
+      setSupplierError("");
+      queryClient.invalidateQueries({ queryKey: queryKeys.suppliers(currentFarmId) });
+    },
+    onError: (err) => {
+      setSupplierError(err.message || "Could not create supplier");
+    },
+  });
 
   const createMutation = useMutation({
     mutationFn: (payload) => api.createOrder(payload),
@@ -128,6 +156,17 @@ export default function OrdersPage() {
     setIsModalOpen(true);
   }
 
+  function handleAddSupplierForProduct(productName) {
+    setSupplierError("");
+    setAddSupplierForProduct(productName || "");
+  }
+
+  // Resolve locked product ID from the product name in the current draft
+  const lockedProduct = addSupplierForProduct
+    ? products.find((p) => p.name.toLowerCase() === addSupplierForProduct.toLowerCase())
+    : null;
+  const lockedProductIds = lockedProduct ? new Set([lockedProduct.id]) : new Set();
+
   if (farmsQuery.isLoading) {
     return (
       <PageState
@@ -191,7 +230,6 @@ export default function OrdersPage() {
       <div className="page-grid">
         <PriceBenchmarkPanel
           orders={ordersQuery.data || []}
-          suppliers={suppliers}
         />
         <OrderTable
           orders={ordersQuery.data || []}
@@ -212,12 +250,25 @@ export default function OrdersPage() {
         unitMode={unitMode}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
         suppliers={suppliers}
-        hasSupplierDirectory={suppliers.length > 0}
         onClose={handleCloseModal}
         onFieldChange={updateField}
         onUnitSelect={handleUnitSelect}
         onSubmit={handleSubmit}
+        onAddSupplier={handleAddSupplierForProduct}
       />
+
+      {addSupplierForProduct !== null && (
+        <SupplierModal
+          supplier={null}
+          products={products}
+          allSuppliers={suppliers}
+          lockedProductIds={lockedProductIds}
+          saving={createSupplierMutation.isPending}
+          error={supplierError}
+          onClose={() => { setAddSupplierForProduct(null); setSupplierError(""); }}
+          onSave={(data) => createSupplierMutation.mutate(data)}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={pendingDeleteId !== null}

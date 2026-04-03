@@ -624,6 +624,22 @@ textarea::placeholder {
   font-size: 1rem;
 }
 
+.supplier-product-row-locked {
+  cursor: default;
+}
+
+.supplier-product-row-locked:hover {
+  background: rgba(45, 106, 79, 0.06);
+}
+
+.supplier-product-icon-locked {
+  border-color: var(--brand);
+  background: var(--brand-light);
+  color: var(--brand);
+  font-size: 0.85rem;
+  cursor: default;
+}
+
 .supplier-products-empty {
   margin: 0;
   padding: 0.75rem;

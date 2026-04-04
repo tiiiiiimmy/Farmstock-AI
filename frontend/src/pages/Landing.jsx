@@ -99,28 +99,21 @@ const PAIN_POINTS = [
 
 const VALUE_BLOCKS = [
   {
-    icon: "alert",
     title: "Stop paying the emergency premium",
     body: "Catch stock risks earlier so farms can order on schedule, not under pressure.",
-    variant: "lp-feature-dark",
   },
   {
-    icon: "clipboard",
     title: "Turn messy supply work into one workflow",
     body: "Move from memory, spreadsheets and scattered supplier chats into one daily operating view.",
-    variant: "lp-feature-light",
+    status: "LIVE",
   },
   {
-    icon: "cart",
     title: "Get from insight to action in minutes",
     body: "See what matters, confirm the decision, and move toward an order without extra admin steps.",
-    variant: "lp-feature-white",
   },
   {
-    icon: "trend",
     title: "Start with a demo, then roll out fast",
     body: "Try the workflow on real sample data first, then bring your own farm live when you're ready.",
-    variant: "lp-feature-muted",
   },
 ];
 
@@ -576,21 +569,64 @@ export default function Landing() {
       {/* ── Features ── */}
       <section className="lp-features-wrap" id="features">
         <div className="lp-features-header">
-          <div className="lp-section-label">Value</div>
-          <h2 className="lp-section-heading">
-            Built to reduce waste, save time, and make trial-to-adoption easy.
-          </h2>
+          <h2 className="lp-features-title">Precision Meets Provenance</h2>
+          <p className="lp-features-subtitle">
+            Technology that amplifies your intuition, rather than replacing it.
+          </p>
         </div>
         <div className="lp-features-bento">
-          {VALUE_BLOCKS.map(({ icon, title, body, variant }) => (
-            <div key={title} className={`lp-feature-card ${variant}`}>
-              <span className="lp-feature-icon" aria-hidden="true">
-                <Icon name={icon} className="lp-feature-icon-svg" />
-              </span>
-              <h3 className="lp-feature-title">{title}</h3>
-              <p className="lp-feature-body">{body}</p>
+          <article className="lp-feature-card lp-feature-card-premium">
+            <img
+              src="/valuebg.png"
+              alt=""
+              className="lp-feature-card-bg"
+              loading="lazy"
+            />
+            <div className="lp-feature-card-overlay" aria-hidden="true" />
+            <div className="lp-feature-card-content">
+              <span className="lp-feature-eyebrow">Stock notifications</span>
+              <h3 className="lp-feature-title">{VALUE_BLOCKS[0].title}</h3>
+              <p className="lp-feature-body">{VALUE_BLOCKS[0].body}</p>
             </div>
-          ))}
+          </article>
+
+          <article className="lp-feature-card lp-feature-card-action">
+            <div className="lp-feature-card-content">
+              <h3 className="lp-feature-title">{VALUE_BLOCKS[2].title}</h3>
+              <p className="lp-feature-body">{VALUE_BLOCKS[2].body}</p>
+            </div>
+          </article>
+
+          <article className="lp-feature-card lp-feature-card-workflow">
+            <div className="lp-feature-card-top">
+              <span className="lp-feature-mini-icon" aria-hidden="true">
+                <Icon name="alert" className="lp-feature-mini-icon-svg" />
+              </span>
+              <span className="lp-feature-status">{VALUE_BLOCKS[1].status}</span>
+            </div>
+            <div className="lp-feature-card-content">
+              <h3 className="lp-feature-title">{VALUE_BLOCKS[1].title}</h3>
+              <p className="lp-feature-body">{VALUE_BLOCKS[1].body}</p>
+            </div>
+          </article>
+
+          <article className="lp-feature-card lp-feature-card-demo">
+            <div className="lp-feature-demo-art">
+              <img
+                src="/valuebg2.png"
+                alt=""
+                className="lp-feature-demo-image"
+                loading="lazy"
+              />
+            </div>
+            <div className="lp-feature-card-content">
+              <h3 className="lp-feature-title">{VALUE_BLOCKS[3].title}</h3>
+              <p className="lp-feature-body">{VALUE_BLOCKS[3].body}</p>
+              <Link to="/register" className="lp-feature-link">
+                Try free for 14 days →
+              </Link>
+            </div>
+          </article>
         </div>
       </section>
 

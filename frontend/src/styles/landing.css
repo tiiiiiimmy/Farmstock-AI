@@ -718,150 +718,241 @@ html {
 /* ── Features section ── */
 .lp-features-wrap {
   background:
-    linear-gradient(180deg, rgba(230, 242, 235, 0.58), rgba(255, 255, 255, 0.52)),
-    linear-gradient(180deg, #edf3ee, #e9efea);
-  padding: 5rem 0;
+    linear-gradient(180deg, rgba(240, 245, 235, 0.94), rgba(237, 243, 234, 0.92)),
+    linear-gradient(180deg, #f2f6ee, #edf3ea);
+  padding: 8rem 0;
 }
 
 .lp-features-header {
   margin: 0 auto;
-  padding: 0 5rem 2.5rem;
+  padding: 0 5rem 4rem;
+  text-align: center;
+}
+
+.lp-features-title {
+  margin: 0;
+  font-size: clamp(2.4rem, 5.6vw, 4.25rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: #154212;
+  font-weight: 800;
+}
+
+.lp-features-subtitle {
+  margin: 1rem auto 0;
+  max-width: 42rem;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  color: #42493e;
 }
 
 .lp-features-bento {
   margin: 0 auto;
   padding: 0 5rem;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1.5rem;
+  min-height: 37.5rem;
 }
 
 .lp-feature-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  justify-content: flex-start;
-  border-radius: var(--r-xl);
-  padding: 3rem 1.5rem;
-  border: 1px solid var(--border);
-  transition: box-shadow var(--t), transform var(--t);
-  aspect-ratio: 4 / 5;
-  position: relative;
+  border-radius: 8px;
   overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(194, 201, 187, 0.3);
 }
 
-.lp-feature-card::before {
-  content: "";
+.lp-feature-card-premium {
+  grid-column: 1 / span 2;
+  min-height: 13.75rem;
+  background: #1e3f18;
+}
+
+.lp-feature-card-bg {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.7), transparent 70%);
-  pointer-events: none;
-  opacity: 0.8;
-  border-radius: inherit;
+  object-fit: cover;
 }
 
-.lp-feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(12, 30, 19, 0.08);
+.lp-feature-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(21, 66, 18, 0.08) 0%, rgba(21, 66, 18, 0.72) 100%);
 }
 
-.lp-feature-card:hover .lp-feature-icon {
-  transform: scale(1.1) translateY(-2px);
+.lp-feature-card-premium .lp-feature-card-content {
+  position: absolute;
+  left: 2rem;
+  right: 2rem;
+  bottom: 2rem;
+  z-index: 1;
+  max-width: 28rem;
 }
 
-.lp-feature-dark {
-  background: linear-gradient(150deg, var(--brand) 0%, #0c351f 100%);
-  border-color: transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+.lp-feature-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  background: #ffe088;
+  color: #241a00;
+  font-size: 0.72rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
 }
 
-.lp-feature-dark::before {
-  background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.15), transparent 60%);
+.lp-feature-card-premium .lp-feature-title {
+  margin-top: 1rem;
+  color: #fff;
+  font-size: clamp(2rem, 3vw, 2.35rem);
+  line-height: 1.1;
 }
 
-.lp-feature-light {
-  background: linear-gradient(145deg, var(--brand-light) 0%, rgba(20, 92, 51, 0.02) 100%);
-  border-color: rgba(20, 92, 51, 0.08);
-  box-shadow: inset 0 1px 0 #fff;
+.lp-feature-card-premium .lp-feature-body {
+  max-width: 24rem;
+  color: rgba(255, 255, 255, 0.84);
 }
 
-.lp-feature-white {
-  background: linear-gradient(180deg, var(--surface) 0%, #f9fcf8 100%);
-  border-color: var(--border);
-  box-shadow: inset 0 1px 0 #fff;
+.lp-feature-card-action {
+  display: flex;
+  align-items: flex-end;
+  background: rgba(255, 255, 255, 0.72);
+  min-height: 13.75rem;
 }
 
-.lp-feature-muted {
-  background: linear-gradient(145deg, #f0f4ef 0%, var(--surface-2) 100%);
-  border-color: rgba(0, 0, 0, 0.04);
-  box-shadow: inset 0 1px 0 #fff;
+.lp-feature-card-action .lp-feature-card-content {
+  padding: 2rem;
 }
 
-.lp-feature-icon {
-  position: relative;
-  width: 64px;
-  height: 64px;
+.lp-feature-card-action .lp-feature-title {
+  color: #154212;
+  font-size: clamp(1.9rem, 2.8vw, 2.15rem);
+  line-height: 1.16;
+}
+
+.lp-feature-card-action .lp-feature-body {
+  color: #31592e;
+  line-height: 1.55;
+}
+
+.lp-feature-card-workflow {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #154212;
+  padding: 1.9rem 1.6rem 1.4rem;
+}
+
+.lp-feature-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.lp-feature-mini-icon {
+  width: 3rem;
+  height: 3rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.75rem;
-  border-radius: 18px;
-  color: currentColor;
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.8),
-    0 4px 12px rgba(0, 0, 0, 0.04);
+  border-radius: 4px;
+  background: #2d5a27;
+  color: #fff;
 }
 
-.lp-feature-icon-svg {
-  width: 30px;
-  height: 30px;
+.lp-feature-mini-icon-svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.lp-feature-status {
+  color: #ffe088;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.lp-feature-card-workflow .lp-feature-card-content {
+  margin-top: 2.2rem;
+}
+
+.lp-feature-card-workflow .lp-feature-title {
+  color: #fff;
+  font-size: clamp(2rem, 3vw, 2.15rem);
+  line-height: 1.08;
+}
+
+.lp-feature-card-workflow .lp-feature-body {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.lp-feature-card-demo {
+  grid-column: 2 / span 2;
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+  gap: 3rem;
+  align-items: center;
+  background: #e5eae0;
+  padding: 2.5rem;
+}
+
+.lp-feature-demo-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-feature-demo-image {
+  width: 100%;
+  max-width: 12rem;
+  border-radius: 0;
+  display: block;
+}
+
+.lp-feature-card-demo .lp-feature-title {
+  color: #181d17;
+  font-size: clamp(2rem, 3vw, 2.2rem);
+  line-height: 1.08;
+}
+
+.lp-feature-card-demo .lp-feature-body {
+  color: #42493e;
+  line-height: 1.65;
+}
+
+.lp-feature-card-content {
+  position: relative;
+  z-index: 1;
 }
 
 .lp-feature-title {
-  position: relative;
-  font-size: 1.15rem;
+  margin: 0;
   font-weight: 800;
-  margin: 0 0 0.8rem;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-  line-height: 1.35;
-}
-
-.lp-feature-dark .lp-feature-title {
-  color: #fff;
-}
-
-.lp-feature-dark .lp-feature-icon {
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.15),
-    0 4px 12px rgba(0, 0, 0, 0.2);
-  color: #fff;
-}
-
-.lp-feature-light .lp-feature-icon,
-.lp-feature-white .lp-feature-icon,
-.lp-feature-muted .lp-feature-icon {
-  background: #ffffff;
-  color: var(--brand);
+  letter-spacing: -0.03em;
 }
 
 .lp-feature-body {
-  position: relative;
-  font-size: 0.88rem;
-  color: var(--ink-2);
-  margin: 0;
-  line-height: 1.65;
-  font-weight: 500;
+  margin: 1rem 0 0;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
-.lp-feature-dark .lp-feature-body {
-  color: rgba(255, 255, 255, 0.8);
+.lp-feature-link {
+  display: inline-block;
+  margin-top: 1.25rem;
+  color: #154212;
+  text-decoration: none;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.lp-feature-link:hover {
+  text-decoration: underline;
 }
 
 /* ── How it Works ── */
@@ -1085,16 +1176,56 @@ html {
 
   .lp-features-bento {
     grid-template-columns: 1fr;
+    grid-template-rows: none;
     padding: 0 1.25rem;
+    min-height: auto;
   }
 
   .lp-feature-card {
-    aspect-ratio: auto;
     min-height: 220px;
   }
 
   .lp-features-header {
     padding: 0 1.25rem 2rem;
+  }
+
+  .lp-features-title {
+    font-size: 2.6rem;
+  }
+
+  .lp-features-subtitle {
+    font-size: 1.05rem;
+  }
+
+  .lp-feature-card-premium,
+  .lp-feature-card-demo {
+    grid-column: auto;
+  }
+
+  .lp-feature-card-premium .lp-feature-card-content,
+  .lp-feature-card-action .lp-feature-card-content,
+  .lp-feature-card-workflow,
+  .lp-feature-card-demo {
+    padding: 1.5rem;
+  }
+
+  .lp-feature-card-premium .lp-feature-card-content {
+    left: 1.5rem;
+    right: 1.5rem;
+    bottom: 1.5rem;
+  }
+
+  .lp-feature-card-demo {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .lp-feature-demo-art {
+    justify-content: flex-start;
+  }
+
+  .lp-feature-demo-image {
+    max-width: 8.5rem;
   }
 
   .lp-steps {

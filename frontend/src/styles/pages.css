@@ -766,7 +766,6 @@
 .bm-track {
   position: relative;
   height: 6px;
-  background: rgba(12, 30, 19, 0.1);
   border-radius: 99px;
   margin-bottom: 2.4rem;
 }
@@ -781,10 +780,11 @@
 /* Avg tick — vertical notch on the track */
 .bm-avg-tick {
   position: absolute;
-  top: -4px;
+  top: var(--bm-avg-tick-top, 4px);
+  bottom: var(--bm-avg-tick-bottom, auto);
   width: 2px;
-  height: 14px;
-  background: var(--brand);
+  height: var(--bm-avg-tick-height, 14px);
+  background: var(--bm-avg-tick-bg, var(--brand));
   border-radius: 2px;
   transform: translateX(-50%);
 }

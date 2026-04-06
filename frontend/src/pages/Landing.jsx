@@ -211,6 +211,32 @@ const HERO_MODULES = [
   },
 ];
 
+const PRICE_BENCHMARK_SAMPLE = {
+  farmCount: 12,
+  regionalMin: 31.8,
+  regionalAvg: 34.9,
+  regionalMax: 38.6,
+  yourLatestPrice: 33.4,
+  yourPercentile: 68,
+  unit: "L",
+  trend: [
+    { date: "Jan", unitPrice: 35.9 },
+    { date: "Feb", unitPrice: 35.4 },
+    { date: "Mar", unitPrice: 34.7 },
+    { date: "Apr", unitPrice: 34.2 },
+    { date: "May", unitPrice: 33.9 },
+    { date: "Jun", unitPrice: 33.4 },
+  ],
+};
+
+function formatNzd(amount) {
+  return new Intl.NumberFormat("en-NZ", {
+    style: "currency",
+    currency: "NZD",
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
 function ModuleRichCard({ module }) {
   if (module.id === "telegram") {
     return (
@@ -250,7 +276,7 @@ function ModuleRichCard({ module }) {
     return (
       <div className="lp-rich-card lp-rich-card-inventory">
         <div className="lp-inv-top">
-          <div className="lp-bento-label" style={{ fontSize: '1.4rem', marginBottom: '0', color: 'var(--ink)' }}>Inventory Health Snapshot</div>
+          <div className="lp-bento-label lp-bento-label-tight">Inventory Health Snapshot</div>
           <span className="lp-forecast-chip">Live sync</span>
         </div>
         <div className="lp-inv-main">
@@ -265,11 +291,11 @@ function ModuleRichCard({ module }) {
               { label: "Fertiliser (Urea)", pct: 85, color: "var(--brand)", note: "Healthy" },
             ].map(({ label, pct, color, note }) => (
               <div key={label} className="lp-mini-bar-row">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.8rem' }}>
-                  <span className="lp-mini-bar-label" style={{ fontSize: '1.15rem', fontWeight: '500' }}>{label}</span>
-                  <span className="lp-mini-bar-pct" style={{ fontSize: '1.15rem', color: color, fontWeight: '600' }}>{note}</span>
+                <div className="lp-mini-bar-meta">
+                  <span className="lp-mini-bar-label">{label}</span>
+                  <span className="lp-mini-bar-pct" style={{ color: color }}>{note}</span>
                 </div>
-                <div className="lp-mini-bar-track" style={{ height: '14px' }}>
+                <div className="lp-mini-bar-track lp-mini-bar-track-thick">
                   <div className="lp-mini-bar-fill" style={{ width: `${pct}%`, background: color }} />
                 </div>
               </div>
@@ -283,8 +309,8 @@ function ModuleRichCard({ module }) {
   if (module.id === "ai-entry") {
     return (
       <div className="lp-rich-card lp-rich-card-ai">
-        <div className="lp-forecast-head" style={{ marginBottom: '2.5rem'}}>
-          <p className="lp-bento-label" style={{ fontSize: '1.4rem', marginBottom: '0', color: 'var(--ink)' }}>Smart Invoice Extraction</p>
+        <div className="lp-forecast-head">
+          <p className="lp-bento-label lp-bento-label-tight">Smart Invoice Extraction</p>
           <span className="lp-forecast-chip">AI Powered</span>
         </div>
         <div className="lp-ai-split">
@@ -303,8 +329,7 @@ function ModuleRichCard({ module }) {
           <div className="lp-ai-form-pane">
             <div className="lp-ai-form-header">
               <div className="lp-ai-success-msg">
-                 <Icon name="check-circle" className="lp-ai-check-icon"/>
-                 Data Extracted
+                 ✓ Data Extracted
               </div>
             </div>
             <div className="lp-ai-grid">
@@ -322,6 +347,125 @@ function ModuleRichCard({ module }) {
                </div>
             </div>
             <button type="button" className="lp-ai-save-btn">Approve & Save to Inventory</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (module.id === "regional-price") {
+    const sample = PRICE_BENCHMARK_SAMPLE;
+    const range = sample.regionalMax - sample.regionalMin || 1;
+    const avgPct = Math.min(100, Math.max(0, ((sample.regionalAvg - sample.regionalMin) / range) * 100));
+    const youPct = Math.min(100, Math.max(0, ((sample.yourLatestPrice - sample.regionalMin) / range) * 100));
+    const labelAlign = youPct < 20 ? "left" : youPct > 80 ? "right" : "center";
+    const cheaper = sample.yourPercentile !== null;
+    const tone = cheaper
+      ? sample.yourPercentile >= 50
+        ? "good"
+        : sample.yourPercentile >= 25
+          ? "mid"
+          : "high"
+      : "mid";
+    const chartWidth = 520;
+    const chartHeight = 172;
+    const chartPaddingX = 24;
+    const chartPaddingTop = 20;
+    const chartPaddingBottom = 34;
+    const chartMin = Math.min(sample.regionalAvg, ...sample.trend.map((point) => point.unitPrice)) - 0.5;
+    const chartMax = Math.max(sample.regionalAvg, ...sample.trend.map((point) => point.unitPrice)) + 0.5;
+    const chartRange = chartMax - chartMin || 1;
+    const stepX = (chartWidth - chartPaddingX * 2) / Math.max(sample.trend.length - 1, 1);
+    const priceToY = (price) =>
+      chartPaddingTop + ((chartMax - price) / chartRange) * (chartHeight - chartPaddingTop - chartPaddingBottom);
+    const chartPoints = sample.trend
+      .map((point, index) => `${chartPaddingX + index * stepX},${priceToY(point.unitPrice)}`)
+      .join(" ");
+    const avgLineY = priceToY(sample.regionalAvg);
+
+    return (
+      <div className="lp-rich-card lp-rich-card-price">
+        <div className="lp-price-shell">
+        
+
+          <div className="bm-range-wrap">
+            <div className="bm-stat-row">
+              <div className="bm-stat">
+                <span className="bm-stat-label">Min</span>
+                <span className="bm-stat-value">{formatNzd(sample.regionalMin)}</span>
+              </div>
+              <div className="bm-stat bm-stat-center">
+                <span className="bm-stat-label">Regional avg</span>
+                <span className="bm-stat-value bm-stat-avg">{formatNzd(sample.regionalAvg)}</span>
+         
+              </div>
+              <div className="bm-stat bm-stat-right">
+                <span className="bm-stat-label">Max</span>
+                <span className="bm-stat-value">{formatNzd(sample.regionalMax)}</span>
+              </div>
+            </div>
+
+            <div className="bm-track">
+              <div className="bm-track-fill" />
+              <div className="bm-avg-tick" style={{ left: `${avgPct}%` }} />
+              <div
+                className={`bm-you-marker bm-you-marker-${tone}`}
+                style={{ left: `${youPct}%` }}
+              >
+                <div className="bm-you-dot" />
+                <div className={`bm-you-label bm-you-label-${labelAlign}`}>
+                  <span className="bm-you-price">{formatNzd(sample.yourLatestPrice)}/{sample.unit}</span>
+                  {cheaper && (
+                    <span className={`bm-you-badge bm-badge-${tone}`}>
+                      Cheaper than {sample.yourPercentile}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="lp-price-chart-panel">
+            <div className="lp-price-chart-head">
+              <p className="lp-price-chart-label">Your price history</p>
+              <span className="lp-price-chart-note">Region avg shown as dashed guide</span>
+            </div>
+
+            <svg
+              viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+              className="lp-price-chart"
+              aria-label="Price history preview"
+              role="img"
+            >
+              <line
+                x1={chartPaddingX}
+                y1={avgLineY}
+                x2={chartWidth - chartPaddingX}
+                y2={avgLineY}
+                className="lp-price-chart-guide"
+              />
+              {sample.trend.map((point, index) => {
+                const x = chartPaddingX + index * stepX;
+                const y = priceToY(point.unitPrice);
+                return (
+                  <g key={point.date}>
+                    <circle cx={x} cy={y} r="5" className="lp-price-chart-dot" />
+                    <text x={x} y={chartHeight - 10} textAnchor="middle" className="lp-price-chart-axis">
+                      {point.date}
+                    </text>
+                  </g>
+                );
+              })}
+              <polyline points={chartPoints} className="lp-price-chart-line" />
+              <text
+                x={chartWidth - chartPaddingX}
+                y={Math.max(avgLineY - 8, 12)}
+                textAnchor="end"
+                className="lp-price-chart-axis lp-price-chart-axis-guide"
+              >
+                Region avg
+              </text>
+            </svg>
           </div>
         </div>
       </div>
@@ -497,7 +641,7 @@ export default function Landing() {
 
         <div className="lp-hero-right">
           <div className="lp-hero-media-stack">
-            <div className="lp-hero-visual">
+            <div className={`lp-hero-visual ${activeModuleId ? "lp-hero-visual-rich" : ""}`}>
               {!activeModuleId ? (
                 <img
                   key="default-img"
@@ -521,9 +665,7 @@ export default function Landing() {
                     aria-selected={activeModuleId === module.id}
                     className={`lp-module-card lp-module-card--rich lp-module-card--${module.id} ${activeModuleId === module.id ? "lp-module-card-active" : ""}`}
                     onMouseEnter={() => { setIsAutoPlaying(false); setActiveModuleId(module.id); }}
-                    onMouseLeave={() => setActiveModuleId(null)}
                     onFocus={() => { setIsAutoPlaying(false); setActiveModuleId(module.id); }}
-                    onBlur={() => setActiveModuleId(null)}
                     onClick={() => { setIsAutoPlaying(false); setActiveModuleId(module.id); }}
                   >
                     <span className="lp-module-tab-label">{module.tabLabel}</span>
@@ -569,7 +711,7 @@ export default function Landing() {
       {/* ── Features ── */}
       <section className="lp-features-wrap" id="features">
         <div className="lp-features-header">
-          <h2 className="lp-features-title">Precision Meets Provenance</h2>
+          <h2 className="lp-features-title">Take Control Before Supplies Run Low</h2>
           <p className="lp-features-subtitle">
             Technology that amplifies your intuition, rather than replacing it.
           </p>

@@ -587,6 +587,7 @@ export default function Landing() {
       <section className="lp-hero">
         <div className="lp-hero-bg-orb lp-hero-bg-orb-a" aria-hidden="true" />
         <div className="lp-hero-bg-orb lp-hero-bg-orb-b" aria-hidden="true" />
+        <div className="lp-hero-bg-orb lp-hero-bg-orb-c" aria-hidden="true" />
         <div className="lp-hero-left">
           <div className="lp-hero-copy-shell">
             <div className="lp-hero-copy" key={activeModule?.id || "default"}>

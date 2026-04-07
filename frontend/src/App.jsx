@@ -23,6 +23,7 @@ export default function App() {
         <Suspense fallback={<div className="loading-state">Loading...</div>}>
           <Routes future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Route path="/" element={<Landing />} />
+            <Route path="/welcome" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/pricing" element={<Pricing />} />

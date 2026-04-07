@@ -678,17 +678,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Marquee ── */}
-      <div className="lp-marquee" aria-hidden="true">
-        <div className="lp-marquee-track">
-          {[0, 1].map((i) => (
-            <span key={i} className="lp-marquee-inner">
-              AI-Powered Predictions · Telegram Alerts · One-Click Ordering ·
-              Price Monitoring · Shelf-Life Intelligence · Zero App Download ·{" "}
-            </span>
-          ))}
-        </div>
-      </div>
+   
 
       {/* ── Pain ── */}
       <section className="lp-section" id="pain">
